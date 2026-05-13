@@ -4,18 +4,18 @@ import { Search, Settings, Map as MapIcon, Bell } from "lucide-react";
 
 export default function Home() {
   const dummyCommodities = [
-    { name: "Beras Medium", price: 13500, changeAmount: 150, changePercent: 1.1, unit: "KG" },
-    { name: "Beras Premium", price: 16200, changeAmount: 0, changePercent: 0, unit: "KG" },
-    { name: "Gula Pasir", price: 16000, changeAmount: -100, changePercent: -0.6, unit: "KG" },
-    { name: "Minyak Goreng Curah", price: 15500, changeAmount: 0, changePercent: 0, unit: "LITER" },
-    { name: "Daging Sapi", price: 130000, changeAmount: 2000, changePercent: 1.5, unit: "KG" },
-    { name: "Daging Ayam Ras", price: 38000, changeAmount: -500, changePercent: -1.3, unit: "KG" },
-    { name: "Telur Ayam Ras", price: 28000, changeAmount: -300, changePercent: -1.0, unit: "KG" },
-    { name: "Bawang Merah", price: 35000, changeAmount: 1500, changePercent: 4.4, unit: "KG" },
-    { name: "Bawang Putih", price: 40000, changeAmount: 500, changePercent: 1.2, unit: "KG" },
-    { name: "Cabai Merah Keriting", price: 55000, changeAmount: -2000, changePercent: -3.5, unit: "KG" },
-    { name: "Cabai Rawit Merah", price: 65000, changeAmount: 3500, changePercent: 5.6, unit: "KG" },
-    { name: "Tepung Terigu", price: 11000, changeAmount: 0, changePercent: 0, unit: "KG" },
+    { id: "beras-medium", name: "Beras Medium", price: 13500, changeAmount: 150, changePercent: 1.1, unit: "KG" },
+    { id: "beras-premium", name: "Beras Premium", price: 16200, changeAmount: 0, changePercent: 0, unit: "KG" },
+    { id: "gula-pasir", name: "Gula Pasir", price: 16000, changeAmount: -100, changePercent: -0.6, unit: "KG" },
+    { id: "minyak-goreng", name: "Minyak Goreng Curah", price: 15500, changeAmount: 0, changePercent: 0, unit: "LITER" },
+    { id: "daging-sapi", name: "Daging Sapi", price: 130000, changeAmount: 2000, changePercent: 1.5, unit: "KG" },
+    { id: "daging-ayam", name: "Daging Ayam Ras", price: 38000, changeAmount: -500, changePercent: -1.3, unit: "KG" },
+    { id: "telur-ayam", name: "Telur Ayam Ras", price: 28000, changeAmount: -300, changePercent: -1.0, unit: "KG" },
+    { id: "bawang-merah", name: "Bawang Merah", price: 35000, changeAmount: 1500, changePercent: 4.4, unit: "KG" },
+    { id: "bawang-putih", name: "Bawang Putih", price: 40000, changeAmount: 500, changePercent: 1.2, unit: "KG" },
+    { id: "cabai-merah", name: "Cabai Merah Keriting", price: 55000, changeAmount: -2000, changePercent: -3.5, unit: "KG" },
+    { id: "cabai-rawit", name: "Cabai Rawit Merah", price: 65000, changeAmount: 3500, changePercent: 5.6, unit: "KG" },
+    { id: "tepung-terigu", name: "Tepung Terigu", price: 11000, changeAmount: 0, changePercent: 0, unit: "KG" },
   ];
 
   return (
@@ -80,6 +80,7 @@ export default function Home() {
             {dummyCommodities.map((commodity, index) => (
               <CommodityCard
                 key={index}
+                id={commodity.id}
                 name={commodity.name}
                 price={commodity.price}
                 changeAmount={commodity.changeAmount}

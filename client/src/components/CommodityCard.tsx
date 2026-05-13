@@ -1,6 +1,8 @@
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import Link from "next/link";
 
 interface CommodityCardProps {
+  id: string;
   name: string;
   price: number;
   changeAmount: number;
@@ -8,12 +10,13 @@ interface CommodityCardProps {
   unit: string;
 }
 
-export default function CommodityCard({ name, price, changeAmount, changePercent, unit }: CommodityCardProps) {
+export default function CommodityCard({ id, name, price, changeAmount, changePercent, unit }: CommodityCardProps) {
   const isUp = changeAmount > 0;
   const isDown = changeAmount < 0;
 
   return (
-    <div className="bg-white border-2 border-border-color shadow-brutal hover:shadow-brutal-hover hover:translate-y-[2px] hover:translate-x-[2px] transition-all duration-150 p-4 flex flex-col justify-between group cursor-pointer relative">
+    <Link href={`/komoditas/${id}`} className="block">
+      <div className="bg-white border-2 border-border-color shadow-brutal hover:shadow-brutal-hover hover:translate-y-[2px] hover:translate-x-[2px] transition-all duration-150 p-4 flex flex-col justify-between group cursor-pointer relative h-full">
       <div className="flex justify-between items-start mb-4">
         <h3 className="font-sans font-bold text-lg uppercase tracking-tight">{name}</h3>
         <div className="text-xs font-mono text-accent-grey uppercase bg-surface px-2 py-1 border border-border-color">
@@ -43,5 +46,6 @@ export default function CommodityCard({ name, price, changeAmount, changePercent
       {/* Decorative Target Border on Hover */}
       <div className={`absolute top-0 left-0 w-1 h-0 group-hover:h-full transition-all duration-300 ${isUp ? "bg-accent-green" : isDown ? "bg-accent-red" : "bg-accent-grey"}`}></div>
     </div>
+    </Link>
   );
 }
