@@ -61,7 +61,7 @@ cd server
 npm install
 npm run dev
 ```
-Backend API akan berjalan di [http://localhost:5000](http://localhost:5000).
+Backend API akan berjalan di [http://localhost:5001](http://localhost:5001).
 
 ## 🎨 Tema UI: Clinical Precision
 Proyek ini mengadopsi tema UI **Clinical Precision / Daylight Assassin Mode**:

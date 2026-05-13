@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model untuk komoditas (misalnya: Beras Medium, Gula Pasir)
+model Commodity {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  unit        String   // KG, LITER, dll
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  prices      Price[]
+}
+
+// Model untuk harga komoditas historis (Time-Series)
+model Price {
+  id          String    @id @default(uuid())
+  commodityId String
+  commodity   Commodity @relation(fields: [commodityId], references: [id])
+  price       Float
+  date        DateTime  @default(now())
+  market      String    @default("Rata-rata Jawa Tengah") // Bisa spesifik per pasar/kabupaten
+  createdAt   DateTime  @default(now())
+
+  @@index([commodityId, date])
+}
+
+// Model untuk Admin / Pengguna Sistem
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
