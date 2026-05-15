@@ -1,22 +1,48 @@
 import Ticker from "@/components/Ticker";
 import CommodityCard from "@/components/CommodityCard";
-import { Search, Settings, Map as MapIcon, Bell } from "lucide-react";
+import { Settings, Bell } from "lucide-react";
+import SearchBar from "@/components/SearchBar";
+import MapFilter from "@/components/MapFilter";
+import RegionDateFilter from "@/components/RegionDateFilter";
 
-export default function Home() {
-  const dummyCommodities = [
-    { id: "beras-medium", name: "Beras Medium", price: 13500, changeAmount: 150, changePercent: 1.1, unit: "KG" },
-    { id: "beras-premium", name: "Beras Premium", price: 16200, changeAmount: 0, changePercent: 0, unit: "KG" },
-    { id: "gula-pasir", name: "Gula Pasir", price: 16000, changeAmount: -100, changePercent: -0.6, unit: "KG" },
-    { id: "minyak-goreng", name: "Minyak Goreng Curah", price: 15500, changeAmount: 0, changePercent: 0, unit: "LITER" },
-    { id: "daging-sapi", name: "Daging Sapi", price: 130000, changeAmount: 2000, changePercent: 1.5, unit: "KG" },
-    { id: "daging-ayam", name: "Daging Ayam Ras", price: 38000, changeAmount: -500, changePercent: -1.3, unit: "KG" },
-    { id: "telur-ayam", name: "Telur Ayam Ras", price: 28000, changeAmount: -300, changePercent: -1.0, unit: "KG" },
-    { id: "bawang-merah", name: "Bawang Merah", price: 35000, changeAmount: 1500, changePercent: 4.4, unit: "KG" },
-    { id: "bawang-putih", name: "Bawang Putih", price: 40000, changeAmount: 500, changePercent: 1.2, unit: "KG" },
-    { id: "cabai-merah", name: "Cabai Merah Keriting", price: 55000, changeAmount: -2000, changePercent: -3.5, unit: "KG" },
-    { id: "cabai-rawit", name: "Cabai Rawit Merah", price: 65000, changeAmount: 3500, changePercent: 5.6, unit: "KG" },
-    { id: "tepung-terigu", name: "Tepung Terigu", price: 11000, changeAmount: 0, changePercent: 0, unit: "KG" },
-  ];
+export default async function Home({ searchParams }: { searchParams: { q?: string, pasar?: string } }) {
+  let commodities = [];
+  try {
+    // Gunakan URL absolute karena ini dijalankan di server
+    const res = await fetch('http://localhost:5001/api/commodities', {
+      cache: 'no-store' // selalu ambil data terbaru
+    });
+    const data = await res.json();
+    if (data.success) {
+      commodities = data.data;
+    }
+  } catch (error) {
+    console.error("Gagal mengambil data komoditas:", error);
+  }
+
+  // Simulate different prices for different regions
+  const query = searchParams.q?.toLowerCase() || "";
+  let filteredCommodities = commodities.filter((c: any) => 
+    c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)
+  );
+
+  const pasar = searchParams.pasar;
+  if (pasar) {
+    const modifier = (pasar.length % 5) + 1; // Arbitrary 1 to 5
+    filteredCommodities = filteredCommodities.map((c: any) => {
+      const priceVariation = c.price * (modifier * 0.01); // 1-5% variation
+      const isIncrease = pasar.length % 2 === 0;
+      const newPrice = isIncrease ? c.price + priceVariation : c.price - priceVariation;
+      const newChangeAmount = isIncrease ? c.changeAmount + 500 : c.changeAmount - 500;
+      
+      return {
+        ...c,
+        price: Math.round(newPrice / 100) * 100, // Round to nearest 100
+        changeAmount: newChangeAmount,
+        changePercent: parseFloat(((newChangeAmount / (newPrice - newChangeAmount)) * 100).toFixed(2))
+      };
+    });
+  }
 
   return (
     <main className="min-h-screen bg-surface flex flex-col">
@@ -30,65 +56,66 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center space-x-6">
-            <div className="relative hidden md:block">
-              <input 
-                type="text" 
-                placeholder="Cari komoditas, pasar..." 
-                className="pl-10 pr-4 py-2 bg-surface border border-border-color font-mono text-sm focus:outline-none focus:border-2 w-64 transition-all"
-              />
-              <Search className="absolute left-3 top-2.5 text-accent-grey" size={16} />
-            </div>
             <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
               <Bell size={20} />
-            </button>
-            <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
-              <MapIcon size={20} />
             </button>
             <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
               <Settings size={20} />
             </button>
           </div>
         </div>
-        <Ticker />
+        <Ticker items={commodities} />
       </header>
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
           
-          <div className="flex justify-between items-end border-b-2 border-border-color pb-4">
-            <div>
-              <h2 className="text-3xl font-bold uppercase tracking-tight">Market Overview</h2>
-              <p className="font-mono text-sm text-accent-grey mt-1">
-                Data Harga Komoditas Rata-rata Jawa Tengah • {new Date().toLocaleDateString("id-ID", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>
+          {/* Left Column - Map and Commodity Filter */}
+          <div className="w-full lg:w-2/3 flex flex-col space-y-6">
+            <div className="bg-surface p-4 border-2 border-border-color shadow-brutal">
+              <h2 className="text-xl font-bold uppercase tracking-tight mb-4">Filter Komoditas</h2>
+              <SearchBar />
             </div>
-            <div className="flex space-x-2">
-              <button className="bg-foreground text-background font-mono text-xs px-4 py-2 font-bold hover:bg-opacity-80 transition-opacity">
-                HARI INI
-              </button>
-              <button className="bg-background text-foreground border border-border-color font-mono text-xs px-4 py-2 font-bold hover:bg-surface transition-colors">
-                1 MINGGU
-              </button>
-              <button className="bg-background text-foreground border border-border-color font-mono text-xs px-4 py-2 font-bold hover:bg-surface transition-colors">
-                1 BULAN
-              </button>
+            
+            <div className="bg-surface p-4 border-2 border-border-color shadow-brutal">
+              <MapFilter showHeader={true} />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {dummyCommodities.map((commodity, index) => (
-              <CommodityCard
-                key={index}
-                id={commodity.id}
-                name={commodity.name}
-                price={commodity.price}
-                changeAmount={commodity.changeAmount}
-                changePercent={commodity.changePercent}
-                unit={commodity.unit}
-              />
-            ))}
+          {/* Right Column - Region/Date Filter and Commodity Items */}
+          <div className="w-full lg:w-2/3 flex flex-col space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-border-color pb-4 gap-4 sm:gap-0">
+              <div>
+                <h2 className="text-3xl font-bold uppercase tracking-tight">Market Overview</h2>
+                <p className="font-mono text-sm text-accent-grey mt-1">
+                  Data Harga Komoditas {searchParams.pasar ? `di ${searchParams.pasar.toUpperCase()}` : "Rata-rata Jawa Tengah"} • {new Date().toLocaleDateString("id-ID", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+              <RegionDateFilter />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredCommodities.length > 0 ? (
+                filteredCommodities.map((commodity: any, index: number) => (
+                  <CommodityCard
+                    key={index}
+                    id={commodity.id}
+                    name={commodity.name}
+                    price={commodity.price}
+                    changeAmount={commodity.changeAmount}
+                    changePercent={commodity.changePercent}
+                    unit={commodity.unit}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full py-10 text-center font-mono text-accent-grey border-2 border-dashed border-border-color">
+                  TIDAK ADA KOMODITAS YANG DITEMUKAN
+                </div>
+              )}
+            </div>
           </div>
+
         </div>
       </div>
     </main>

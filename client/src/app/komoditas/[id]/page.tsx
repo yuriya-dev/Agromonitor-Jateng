@@ -2,49 +2,57 @@ import { ArrowLeft, Share2, Bell, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import CandlestickChart from "@/components/CandlestickChart";
 import Ticker from "@/components/Ticker";
+import SetAlertButton from "@/components/SetAlertButton";
 
-export default function CommodityDetail({ params }: { params: { id: string } }) {
+export default async function CommodityDetail({ params }: { params: { id: string } }) {
   const commodityId = params.id;
   
-  // Format ID ke nama (beras-medium -> Beras Medium)
+  let commodityData = null;
+  let tickerItems = [];
+  
+  try {
+    // Fetch specific commodity
+    const res = await fetch(`http://localhost:5001/api/commodities/${commodityId}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (data.success) {
+      commodityData = data.data;
+    }
+
+    // Fetch all for ticker
+    const allRes = await fetch(`http://localhost:5001/api/commodities`, { cache: 'no-store' });
+    const allData = await allRes.json();
+    if (allData.success) {
+      tickerItems = allData.data;
+    }
+  } catch (error) {
+    console.error("Gagal mengambil data", error);
+  }
+
+  // Format ID ke nama (beras-medium -> Beras Medium) jika data tidak ada
   const formatName = (id: string) => {
     return id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  const name = formatName(commodityId);
-  const currentPrice = 13500;
-  const changeAmount = 150;
-  const changePercent = 1.1;
+  const name = commodityData?.name || formatName(commodityId);
+  const chartData = commodityData?.prices || [];
+  
+  // Calculate current price and change based on chart data
+  let currentPrice = 0;
+  let changeAmount = 0;
+  let changePercent = 0;
+
+  if (chartData.length >= 2) {
+    const latest = chartData[chartData.length - 1].close;
+    const previous = chartData[chartData.length - 2].close;
+    currentPrice = latest;
+    changeAmount = latest - previous;
+    changePercent = parseFloat(((changeAmount / previous) * 100).toFixed(2));
+  } else if (chartData.length === 1) {
+    currentPrice = chartData[0].close;
+  }
+
   const isUp = changeAmount > 0;
   const isDown = changeAmount < 0;
-
-  // Generate dummy candlestick data
-  const generateDummyData = () => {
-    let currentDummyPrice = 13000;
-    const data = [];
-    const now = new Date();
-    for (let i = 60; i >= 0; i--) {
-      const time = new Date(now);
-      time.setDate(time.getDate() - i);
-      
-      const open = currentDummyPrice + (Math.random() - 0.5) * 500;
-      const close = open + (Math.random() - 0.5) * 600;
-      const high = Math.max(open, close) + Math.random() * 200;
-      const low = Math.min(open, close) - Math.random() * 200;
-      
-      data.push({
-        time: time.toISOString().split('T')[0],
-        open: Math.round(open),
-        high: Math.round(high),
-        low: Math.round(low),
-        close: Math.round(close)
-      });
-      currentDummyPrice = close;
-    }
-    return data;
-  };
-
-  const chartData = generateDummyData();
 
   return (
     <main className="min-h-screen bg-surface flex flex-col">
@@ -63,12 +71,10 @@ export default function CommodityDetail({ params }: { params: { id: string } }) 
             <button className="flex items-center text-xs font-mono font-bold px-3 py-2 border border-border-color hover:bg-surface transition-colors">
               <Share2 size={16} className="mr-2" /> SHARE
             </button>
-            <button className="flex items-center text-xs font-mono font-bold px-3 py-2 bg-foreground text-background hover:bg-opacity-80 transition-colors">
-              <Bell size={16} className="mr-2" /> SET ALERT
-            </button>
+            <SetAlertButton commodityName={name} currentPrice={currentPrice} />
           </div>
         </div>
-        <Ticker />
+        <Ticker items={tickerItems} />
       </header>
 
       {/* Main Content */}
