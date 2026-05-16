@@ -2,6 +2,7 @@
 
 import { Bell, X } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 interface SetAlertButtonProps {
   commodityName: string;
@@ -13,11 +14,47 @@ export default function SetAlertButton({ commodityName, currentPrice }: SetAlert
   const [targetPrice, setTargetPrice] = useState(currentPrice.toString());
   const [condition, setCondition] = useState("above");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate API call to save alert
-    alert(`Alert disimpan! Anda akan diberitahu jika harga ${commodityName} ${condition === "above" ? "naik di atas" : "turun di bawah"} Rp ${Number(targetPrice).toLocaleString("id-ID")}`);
-    setIsOpen(false);
+    setIsLoading(true);
+    
+    try {
+      const res = await fetch("http://localhost:5001/api/notifications/telegram", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commodityName,
+          condition,
+          targetPrice: Number(targetPrice),
+          currentPrice
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        toast.success(
+          <span>
+            {data.message}
+            <br />
+            <span className="text-xs font-normal">Harga {commodityName} {condition === "above" ? "naik di atas" : "turun di bawah"} Rp {Number(targetPrice).toLocaleString("id-ID")}</span>
+          </span>,
+          { duration: 5000 }
+        );
+        setIsOpen(false);
+      } else {
+        toast.error(`Gagal: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Gagal mengirim alert", error);
+      toast.error("Terjadi kesalahan sistem saat menghubungi backend.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,9 +123,10 @@ export default function SetAlertButton({ commodityName, currentPrice }: SetAlert
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-foreground text-background font-bold uppercase border-2 border-foreground hover:bg-opacity-80 transition-colors"
+                  disabled={isLoading}
+                  className="flex-1 py-3 bg-foreground text-background font-bold uppercase border-2 border-foreground hover:bg-opacity-80 transition-colors disabled:opacity-50"
                 >
-                  Simpan Alert
+                  {isLoading ? "Menyimpan..." : "Simpan Alert"}
                 </button>
               </div>
             </form>
