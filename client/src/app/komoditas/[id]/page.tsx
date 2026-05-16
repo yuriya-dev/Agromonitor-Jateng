@@ -4,6 +4,7 @@ import CandlestickChart from "@/components/CandlestickChart";
 import Ticker from "@/components/Ticker";
 import SetAlertButton from "@/components/SetAlertButton";
 import ExportButton from "@/components/ExportButton";
+import PredictionSection from "@/components/PredictionSection";
 
 export default async function CommodityDetail({ params }: { params: { id: string } }) {
   const commodityId = params.id;
@@ -150,22 +151,7 @@ export default async function CommodityDetail({ params }: { params: { id: string
           <div className="lg:col-span-2 space-y-6">
             <CandlestickChart data={chartData} />
             
-            <div className="bg-white border-2 border-border-color shadow-brutal p-6">
-              <h3 className="font-bold uppercase tracking-tight text-lg mb-4 border-b border-border-color pb-2">Analisis & Prediksi (Machine Learning)</h3>
-              <p className="text-sm leading-relaxed">
-                Berdasarkan model <strong>ARIMA</strong> yang dilatih pada data historis 5 tahun terakhir, tren harga {name} di Jawa Tengah menunjukkan sinyal <strong>BULLISH</strong> untuk 14 hari ke depan. Faktor musiman (menjelang hari besar) dan anomali iklim di daerah sentra produksi diprediksi akan menekan pasokan sebesar 12%.
-              </p>
-              
-              <div className="mt-6 p-4 bg-surface border border-border-color flex justify-between items-center">
-                <div>
-                  <div className="text-xs font-mono text-accent-grey uppercase">Prediksi Harga H+7</div>
-                  <div className="font-mono font-bold text-xl mt-1">Rp 14.200 <span className="text-accent-red text-sm ml-2">▲ 5.1%</span></div>
-                </div>
-                <button className="bg-foreground text-background font-mono text-xs font-bold px-4 py-2 hover:bg-opacity-80 transition-colors">
-                  LIHAT DETAIL PREDIKSI
-                </button>
-              </div>
-            </div>
+            <PredictionSection commodityId={commodityId} name={name} />
           </div>
           
         </div>

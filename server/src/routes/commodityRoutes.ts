@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getAllCommodities, getCommodityBySlug } from '../controllers/commodityController';
+import { getAllCommodities, getCommodityBySlug, getCommodityPrediction } from '../controllers/commodityController';
 
 const router = Router();
 
 router.get('/', getAllCommodities);
+router.get('/:slug/predict', getCommodityPrediction);
 router.get('/:slug', getCommodityBySlug);
 
 export default router;
