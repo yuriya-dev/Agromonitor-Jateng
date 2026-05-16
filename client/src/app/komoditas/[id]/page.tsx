@@ -3,6 +3,7 @@ import Link from "next/link";
 import CandlestickChart from "@/components/CandlestickChart";
 import Ticker from "@/components/Ticker";
 import SetAlertButton from "@/components/SetAlertButton";
+import ExportButton from "@/components/ExportButton";
 
 export default async function CommodityDetail({ params }: { params: { id: string } }) {
   const commodityId = params.id;
@@ -54,6 +55,15 @@ export default async function CommodityDetail({ params }: { params: { id: string
   const isUp = changeAmount > 0;
   const isDown = changeAmount < 0;
 
+  // Siapkan data untuk Export CSV
+  const exportRows = chartData.map((item: any) => [
+    item.time,
+    item.open,
+    item.high,
+    item.low,
+    item.close
+  ]);
+
   return (
     <main className="min-h-screen bg-surface flex flex-col">
       {/* Header (Minimal) */}
@@ -71,6 +81,11 @@ export default async function CommodityDetail({ params }: { params: { id: string
             <button className="flex items-center text-xs font-mono font-bold px-3 py-2 border border-border-color hover:bg-surface transition-colors">
               <Share2 size={16} className="mr-2" /> SHARE
             </button>
+            <ExportButton 
+              filename={`historis_${commodityId}_${new Date().toISOString().split('T')[0]}.csv`}
+              headers={["Tanggal", "Harga Buka", "Harga Tertinggi", "Harga Terendah", "Harga Tutup"]}
+              rows={exportRows}
+            />
             <SetAlertButton commodityName={name} currentPrice={currentPrice} />
           </div>
         </div>

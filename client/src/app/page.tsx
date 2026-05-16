@@ -4,6 +4,7 @@ import { Settings, Bell } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import MapFilter from "@/components/MapFilter";
 import RegionDateFilter from "@/components/RegionDateFilter";
+import ExportButton from "@/components/ExportButton";
 
 export default async function Home({ searchParams }: { searchParams: { q?: string, pasar?: string } }) {
   let commodities = [];
@@ -43,6 +44,17 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
       };
     });
   }
+
+  // Siapkan data untuk Export CSV
+  const exportRows = filteredCommodities.map((item: any) => [
+    `"${item.id}"`,
+    `"${item.name}"`,
+    `"${searchParams.pasar || "Rata-rata Jawa Tengah"}"`,
+    item.price,
+    item.changeAmount,
+    item.changePercent,
+    `"${item.unit}"`
+  ]);
 
   return (
     <main className="min-h-screen bg-surface flex flex-col">
@@ -92,7 +104,14 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
                   Data Harga Komoditas {searchParams.pasar ? `di ${searchParams.pasar.toUpperCase()}` : "Rata-rata Jawa Tengah"} • {new Date().toLocaleDateString("id-ID", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
-              <RegionDateFilter />
+              <div className="flex items-center gap-4">
+                <ExportButton 
+                  filename={searchParams.pasar ? `harga_komoditas_${searchParams.pasar}_${new Date().toISOString().split('T')[0]}.csv` : `harga_komoditas_jateng_${new Date().toISOString().split('T')[0]}.csv`}
+                  headers={["ID Komoditas", "Nama Komoditas", "Pasar", "Harga", "Perubahan (Rp)", "Perubahan (%)", "Satuan"]}
+                  rows={exportRows}
+                />
+                <RegionDateFilter />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

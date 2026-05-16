@@ -126,10 +126,11 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
       <style dangerouslySetInnerHTML={{
         __html: `
         .svg-map-container svg {
-          width: 150%;
-          height: 150%;
+          width: 175%;
+          height: 175%;
           display: block;
           overflow: visible;
+          pointer-events: auto;
         }
         .svg-map-container path {
           fill: #FFFFFF;

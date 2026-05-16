@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback } from "react";
 
 const PetaJateng = dynamic(() => import("./PetaJateng"), {
@@ -21,17 +21,22 @@ interface MapFilterProps {
 export default function MapFilter({ showHeader = true, className = "" }: MapFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const currentPasar = searchParams.get("pasar") || "";
 
   const handleRegionSelect = useCallback((regionName: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (currentPasar.toLowerCase() === regionName.toLowerCase()) {
+    
+    console.log("clicked:", regionName);
+    console.log("current:", currentPasar);
+
+    if (currentPasar === regionName) {
       params.delete("pasar");
     } else {
-      params.set("pasar", regionName.toLowerCase());
+      params.set("pasar", regionName);
     }
-    router.push(`/?${params.toString()}`, { scroll: false });
-  }, [searchParams, currentPasar, router]);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, currentPasar, router, pathname]);
 
   return (
     <div className={`w-full ${className}`.trim()}>
