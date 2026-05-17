@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import JawaTengah from "./JawaTengah";
 
 // Daftar kabupaten mock untuk mapping ke path
 const KABUPATEN_NAMES = [
@@ -15,32 +16,13 @@ const KABUPATEN_NAMES = [
 ];
 
 export default function MapComponent() {
-  const [svgContent, setSvgContent] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentPasar = searchParams.get("pasar") || "";
 
   useEffect(() => {
-    fetch("/Jawa-Tengah.svg")
-      .then(res => res.text())
-      .then(text => {
-        // Hapus rect background bawaan SVG agar transparan
-        let modifiedSvg = text.replace(/<rect[^>]*>/g, "");
-        // Ubah style inline agar sesuai tema
-        modifiedSvg = modifiedSvg.replace(/background-color:#[a-zA-Z0-9]+/g, "background-color:transparent");
-        
-        // Buat SVG responsif
-        modifiedSvg = modifiedSvg.replace(/width="[0-9]+"/, 'width="100%"');
-        modifiedSvg = modifiedSvg.replace(/height="[0-9]+"/, 'height="100%"');
-        
-        setSvgContent(modifiedSvg);
-      })
-      .catch(err => console.error("Gagal memuat SVG:", err));
-  }, []);
-
-  useEffect(() => {
-    if (containerRef.current && svgContent) {
+    if (containerRef.current) {
       const paths = containerRef.current.querySelectorAll("path");
       
       paths.forEach((path, index) => {
@@ -48,35 +30,35 @@ export default function MapComponent() {
         const name = KABUPATEN_NAMES[index % KABUPATEN_NAMES.length];
         
         // Neo brutalist styling
-        path.style.cursor = "pointer";
-        path.style.transition = "all 0.15s ease-in-out";
-        path.style.stroke = "#000000";
-        path.style.strokeWidth = "2";
+        path.style.setProperty("cursor", "pointer", "important");
+        path.style.setProperty("transition", "all 0.15s ease-in-out", "important");
+        path.style.setProperty("stroke", "#000000", "important");
+        path.style.setProperty("stroke-width", "2", "important");
         
         // Tooltip sederhana bawaan browser
         path.setAttribute("title", name);
         
         if (currentPasar.toLowerCase() === name.toLowerCase()) {
-          path.style.fill = "#000000"; // Selected
+          path.style.setProperty("fill", "#000000", "important"); // Selected
         } else {
-          path.style.fill = "#FFFFFF"; // Default
+          path.style.setProperty("fill", "#FFFFFF", "important"); // Default
         }
 
         path.onmouseenter = () => {
           if (currentPasar.toLowerCase() !== name.toLowerCase()) {
-            path.style.fill = "#E0E0E0"; // Hover
-            path.style.transform = "translate(-2px, -2px)";
-            path.style.filter = "drop-shadow(2px 2px 0px #000000)";
+            path.style.setProperty("fill", "#E0E0E0", "important"); // Hover
+            path.style.setProperty("transform", "translate(-2px, -2px)", "important");
+            path.style.setProperty("filter", "drop-shadow(2px 2px 0px #000000)", "important");
           }
         };
 
         path.onmouseleave = () => {
-          path.style.transform = "none";
-          path.style.filter = "none";
+          path.style.removeProperty("transform");
+          path.style.removeProperty("filter");
           if (currentPasar.toLowerCase() !== name.toLowerCase()) {
-            path.style.fill = "#FFFFFF";
+            path.style.setProperty("fill", "#FFFFFF", "important");
           } else {
-            path.style.fill = "#000000";
+            path.style.setProperty("fill", "#000000", "important");
           }
         };
 
@@ -91,15 +73,7 @@ export default function MapComponent() {
         };
       });
     }
-  }, [svgContent, currentPasar, router]);
-
-  if (!svgContent) {
-    return (
-      <div className="w-full h-[400px] bg-border-color animate-pulse border-2 border-border-color shadow-brutal flex items-center justify-center font-mono font-bold">
-        MEMUAT PETA SVG...
-      </div>
-    );
-  }
+  }, [currentPasar, router]);
 
   return (
     <div className="border-2 border-border-color shadow-brutal w-full bg-surface relative overflow-hidden flex flex-col">
@@ -112,8 +86,9 @@ export default function MapComponent() {
       <div 
         ref={containerRef} 
         className="w-full h-[400px] flex justify-center items-center p-4 bg-[#f8f9fa]" // sedikit kontras agar peta putih menonjol
-        dangerouslySetInnerHTML={{ __html: svgContent }} 
-      />
+      >
+        <JawaTengah className="w-full h-full" viewBox="0 0 800 533" />
+      </div>
     </div>
   );
 }

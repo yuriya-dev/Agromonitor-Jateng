@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, MouseEvent } from "react";
+import JawaTengah from "./JawaTengah";
 
 const KABUPATEN_NAMES = [
   "Semarang", "Surakarta", "Banyumas", "Magelang", "Tegal",
@@ -18,7 +19,6 @@ interface PetaJatengProps {
 }
 
 export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengProps) {
-  const [svgContent, setSvgContent] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Tooltip State
@@ -30,38 +30,7 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
   });
 
   useEffect(() => {
-    fetch("/Jawa-Tengah.svg")
-      .then((res) => res.text())
-      .then((text) => {
-        // Ambil width dan height asli untuk dijadikan viewBox agar peta bisa scale
-        const widthMatch = text.match(/width="([^"]*)"/i);
-        const heightMatch = text.match(/height="([^"]*)"/i);
-        const origWidth = widthMatch ? widthMatch[1] : "800";
-        const origHeight = heightMatch ? heightMatch[1] : "533";
-
-        // Bersihkan atribut bawaan
-        let modifiedSvg = text.replace(/<rect[^>]*>/g, "");
-        modifiedSvg = modifiedSvg.replace(/style="filter:[^"]*"/g, "");
-        modifiedSvg = modifiedSvg.replace(/background-color:#[a-zA-Z0-9]+/g, "background-color:transparent");
-
-        if (!modifiedSvg.includes("viewBox")) {
-          modifiedSvg = modifiedSvg.replace(/<svg\s/i, `<svg viewBox="0 0 ${origWidth} ${origHeight}" `);
-        }
-
-        modifiedSvg = modifiedSvg.replace(/width="[^"]*"/i, 'width="100%"');
-        modifiedSvg = modifiedSvg.replace(/height="[^"]*"/i, 'height="100%"');
-
-        // Hapus inline fill/stroke agar bisa di-override oleh CSS
-        modifiedSvg = modifiedSvg.replace(/fill="#[a-zA-Z0-9]+"/g, "");
-        modifiedSvg = modifiedSvg.replace(/stroke="#[a-zA-Z0-9]+"/g, "");
-
-        setSvgContent(modifiedSvg);
-      })
-      .catch(err => console.error("Gagal memuat peta:", err));
-  }, []);
-
-  useEffect(() => {
-    if (containerRef.current && svgContent) {
+    if (containerRef.current) {
       const paths = containerRef.current.querySelectorAll("path");
 
       paths.forEach((path, index) => {
@@ -78,7 +47,7 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
         }
       });
     }
-  }, [svgContent, activeRegion, onRegionSelect]);
+  }, [activeRegion, onRegionSelect]);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const target = (e.target as Element).closest("path");
@@ -112,14 +81,6 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
     }
   };
 
-  if (!svgContent) {
-    return (
-      <div className="w-full h-[400px] bg-surface flex items-center justify-center font-mono font-bold border-2 border-border-color shadow-brutal animate-pulse">
-        MEMUAT PETA...
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full bg-surface border-2 border-border-color shadow-brutal">
       {/* CSS internal untuk mengatur gaya SVG paths */}
@@ -133,9 +94,9 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
           pointer-events: auto;
         }
         .svg-map-container path {
-          fill: #FFFFFF;
-          stroke: #000000;
-          stroke-width: 1px;
+          fill: #FFFFFF !important;
+          stroke: #000000 !important;
+          stroke-width: 1px !important;
           vector-effect: non-scaling-stroke;
           cursor: pointer;
           transition: fill 0.1s ease, stroke-width 0.1s ease;
@@ -154,11 +115,12 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
       <div
         ref={containerRef}
         className="svg-map-container w-full aspect-video flex justify-center items-center p-2 bg-[#f8f9fa]"
-        dangerouslySetInnerHTML={{ __html: svgContent }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
-      />
+      >
+        <JawaTengah viewBox="0 0 800 533" />
+      </div>
 
       {/* Pin Tool Informasi */}
       {tooltip.show && (
