@@ -108,7 +108,7 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
           stroke-width: 2px !important;
         }
         .svg-map-container path[data-selected="true"] {
-          fill: #000000 !important;
+          fill: #22C55E !important;
           stroke-width: 2px !important;
         }
       `}} />
