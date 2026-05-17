@@ -87,7 +87,7 @@ export default function MapComponent() {
         ref={containerRef} 
         className="w-full h-[400px] flex justify-center items-center p-4 bg-[#f8f9fa]" // sedikit kontras agar peta putih menonjol
       >
-        <JawaTengah className="w-full h-full" viewBox="0 0 800 533" />
+        <JawaTengah className="w-full h-full" />
       </div>
     </div>
   );

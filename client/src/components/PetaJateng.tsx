@@ -89,7 +89,7 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
         __html: `
         .svg-map-container svg {
           width: 175%;
-          height: 175%;
+          height: 160%;
           display: block;
           overflow: visible;
           pointer-events: auto;
@@ -120,7 +120,7 @@ export default function PetaJateng({ onRegionSelect, activeRegion }: PetaJatengP
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
       >
-        <JawaTengah viewBox="0 0 800 533" />
+        <JawaTengah />
       </div>
 
       {/* Pin Tool Informasi */}
