@@ -4,13 +4,14 @@ import { useEffect, useRef, useState, MouseEvent } from "react";
 import JawaTengah from "./JawaTengah";
 
 const KABUPATEN_NAMES = [
-  "Semarang", "Surakarta", "Banyumas", "Magelang", "Tegal",
-  "Pekalongan", "Pati", "Cilacap", "Jepara", "Wonosobo",
-  "Kudus", "Boyolali", "Demak", "Grobogan", "Klaten",
-  "Brebes", "Pemalang", "Batang", "Kendal", "Temanggung",
-  "Purbalingga", "Banjarnegara", "Cilacap", "Kebumen", "Purworejo",
-  "Wonosobo", "Magelang", "Boyolali", "Klaten", "Sukoharjo",
-  "Wonogiri", "Karanganyar", "Sragen", "Grobogan", "Blora"
+  "Banjarnegara", "Banyumas", "Batang", "Blora", "Boyolali",
+  "Brebes", "Cilacap", "Demak", "Grobogan", "Jepara",
+  "Karanganyar", "Kebumen", "Kendal", "Klaten", "Kota Magelang",
+  "Kota Pekalongan", "Kota Semarang", "Kota Tegal", "Kudus", "Magelang",
+  "Pati", "Pekalongan", "Pemalang", "Purbalingga", "Purworejo",
+  "Rembang", "Kota Salatiga", "Semarang", "Sragen", "Sukoharjo",
+  "Kota Surakarta", "Tegal", "Temanggung", "Waduk Kedung Ombo", "Wonogiri",
+  "Wonosobo"
 ];
 
 interface PetaJatengProps {
