@@ -10,7 +10,7 @@ const KABUPATEN_NAMES = [
   "Kota Pekalongan", "Kota Semarang", "Kota Tegal", "Kudus", "Magelang",
   "Pati", "Pekalongan", "Pemalang", "Purbalingga", "Purworejo",
   "Rembang", "Kota Salatiga", "Semarang", "Sragen", "Sukoharjo",
-  "Kota Surakarta", "Tegal", "Temanggung", "Waduk Kedung Ombo", "Wonogiri",
+  "Kota Surakarta", "Tegal", "Temanggung", "", "Wonogiri",
   "Wonosobo"
 ];
 
