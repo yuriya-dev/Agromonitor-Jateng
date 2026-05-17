@@ -125,4 +125,4 @@ dist
 # Sesuai instruksi: Jangan masukkan folder docs dan project_dokumentation.md ke git
 docs/
 project_dokumentation.md
-/storage
+storage/
