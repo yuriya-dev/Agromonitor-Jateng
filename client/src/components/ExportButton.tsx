@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 interface ExportButtonProps {
   filename?: string;
   headers: string[];
-  rows: any[][];
+  rows: Array<Array<string | number>>;
 }
 
 export default function ExportButton({ filename = "agromonitor-data.csv", headers, rows }: ExportButtonProps) {

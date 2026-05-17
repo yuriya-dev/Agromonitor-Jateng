@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, IChartApi, LineSeries } from "lightweight-charts";
-import { AlertTriangle, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface PredictionData {
   time: string;
@@ -41,7 +41,7 @@ export default function PredictionSection({ commodityId, name }: PredictionSecti
     const fetchPrediction = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5001/api/commodities/${commodityId}/predict?days=${days}`);
+        const res = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}/predict?days=${days}`);
         const data: PredictionResponse = await res.json();
         
         if (data.success && data.data) {
@@ -131,7 +131,7 @@ export default function PredictionSection({ commodityId, name }: PredictionSecti
   return (
     <div className="bg-white border-2 border-border-color shadow-brutal p-6">
       <div className="flex justify-between items-center border-b border-border-color pb-4 mb-6">
-        <h3 className="font-bold uppercase tracking-tight text-xl">Prediksi Machine Learning</h3>
+        <h3 className="font-bold uppercase tracking-tight text-xl">Prediksi Machine Learning - {name}</h3>
         
         <div className="flex space-x-2">
           {[7, 14, 30].map(d => (

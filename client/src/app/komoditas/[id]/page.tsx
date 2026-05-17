@@ -1,10 +1,18 @@
-import { ArrowLeft, Share2, Bell, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Share2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import CandlestickChart from "@/components/CandlestickChart";
 import Ticker from "@/components/Ticker";
 import SetAlertButton from "@/components/SetAlertButton";
 import ExportButton from "@/components/ExportButton";
 import PredictionSection from "@/components/PredictionSection";
+
+interface ChartDataPoint {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
 
 export default async function CommodityDetail({ params }: { params: { id: string } }) {
   const commodityId = params.id;
@@ -14,14 +22,14 @@ export default async function CommodityDetail({ params }: { params: { id: string
   
   try {
     // Fetch specific commodity
-    const res = await fetch(`http://localhost:5001/api/commodities/${commodityId}`, { cache: 'no-store' });
+    const res = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}`, { cache: 'no-store' });
     const data = await res.json();
     if (data.success) {
       commodityData = data.data;
     }
 
     // Fetch all for ticker
-    const allRes = await fetch(`http://localhost:5001/api/commodities`, { cache: 'no-store' });
+    const allRes = await fetch(`http://127.0.0.1:5001/api/commodities`, { cache: 'no-store' });
     const allData = await allRes.json();
     if (allData.success) {
       tickerItems = allData.data;
@@ -57,7 +65,7 @@ export default async function CommodityDetail({ params }: { params: { id: string
   const isDown = changeAmount < 0;
 
   // Siapkan data untuk Export CSV
-  const exportRows = chartData.map((item: any) => [
+  const exportRows = chartData.map((item: ChartDataPoint) => [
     item.time,
     item.open,
     item.high,

@@ -21,7 +21,7 @@ export default function SetAlertButton({ commodityName, currentPrice }: SetAlert
     setIsLoading(true);
     
     try {
-      const res = await fetch("http://localhost:5001/api/notifications/telegram", {
+      const res = await fetch("http://127.0.0.1:5001/api/notifications/telegram", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

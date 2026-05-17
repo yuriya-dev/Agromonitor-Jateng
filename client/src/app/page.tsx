@@ -6,11 +6,30 @@ import MapFilter from "@/components/MapFilter";
 import RegionDateFilter from "@/components/RegionDateFilter";
 import ExportButton from "@/components/ExportButton";
 
-export default async function Home({ searchParams }: { searchParams: { q?: string, pasar?: string } }) {
-  let commodities = [];
+export const dynamic = "force-dynamic";
+
+interface CommoditySummary {
+  id: string;
+  name: string;
+  unit: string;
+  price: number;
+  changeAmount: number;
+  changePercent: number;
+}
+
+export default async function Home({ searchParams }: { searchParams: { q?: string, pasar?: string, date?: string } }) {
+  let commodities: CommoditySummary[] = [];
   try {
+    const apiQuery = new URLSearchParams();
+    if (searchParams.pasar) {
+      apiQuery.set('pasar', searchParams.pasar);
+    }
+    if (searchParams.date) {
+      apiQuery.set('date', searchParams.date);
+    }
+
     // Gunakan URL absolute karena ini dijalankan di server
-    const res = await fetch('http://localhost:5001/api/commodities', {
+    const res = await fetch(`http://127.0.0.1:5001/api/commodities${apiQuery.toString() ? `?${apiQuery.toString()}` : ''}`, {
       cache: 'no-store' // selalu ambil data terbaru
     });
     const data = await res.json();
@@ -21,32 +40,13 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
     console.error("Gagal mengambil data komoditas:", error);
   }
 
-  // Simulate different prices for different regions
   const query = searchParams.q?.toLowerCase() || "";
-  let filteredCommodities = commodities.filter((c: any) => 
-    c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)
+  const filteredCommodities = commodities.filter((commodity) => 
+    commodity.name.toLowerCase().includes(query) || commodity.id.toLowerCase().includes(query)
   );
 
-  const pasar = searchParams.pasar;
-  if (pasar) {
-    const modifier = (pasar.length % 5) + 1; // Arbitrary 1 to 5
-    filteredCommodities = filteredCommodities.map((c: any) => {
-      const priceVariation = c.price * (modifier * 0.01); // 1-5% variation
-      const isIncrease = pasar.length % 2 === 0;
-      const newPrice = isIncrease ? c.price + priceVariation : c.price - priceVariation;
-      const newChangeAmount = isIncrease ? c.changeAmount + 500 : c.changeAmount - 500;
-      
-      return {
-        ...c,
-        price: Math.round(newPrice / 100) * 100, // Round to nearest 100
-        changeAmount: newChangeAmount,
-        changePercent: parseFloat(((newChangeAmount / (newPrice - newChangeAmount)) * 100).toFixed(2))
-      };
-    });
-  }
-
   // Siapkan data untuk Export CSV
-  const exportRows = filteredCommodities.map((item: any) => [
+  const exportRows = filteredCommodities.map((item) => [
     `"${item.id}"`,
     `"${item.name}"`,
     `"${searchParams.pasar || "Rata-rata Jawa Tengah"}"`,
@@ -116,7 +116,7 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredCommodities.length > 0 ? (
-                filteredCommodities.map((commodity: any, index: number) => (
+                filteredCommodities.map((commodity, index) => (
                   <CommodityCard
                     key={index}
                     id={commodity.id}
