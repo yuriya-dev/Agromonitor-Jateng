@@ -5,6 +5,7 @@ import morgan from 'morgan';
 
 import commodityRoutes from './routes/commodityRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(morgan('dev'));
 // API Routes
 app.use('/api/commodities', commodityRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Basic Route
 app.get('/', (req: Request, res: Response) => {

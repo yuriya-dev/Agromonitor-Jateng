@@ -33,6 +33,8 @@ model Price {
   price       Float
   date        DateTime  @default(now())
   market      String    @default("Rata-rata Jawa Tengah") // Bisa spesifik per pasar/kabupaten
+  status      String    @default("VALID")
+  source      String    @default("Petugas Lapangan")
   createdAt   DateTime  @default(now())
 
   @@index([commodityId, date])
