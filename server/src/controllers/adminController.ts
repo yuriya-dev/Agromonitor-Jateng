@@ -48,6 +48,7 @@ export const getTransactions = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     const search = req.query.search as string || '';
+    const filterStatus = req.query.status as string || '';
     
     const skip = (page - 1) * limit;
 
@@ -57,6 +58,10 @@ export const getTransactions = async (req: Request, res: Response) => {
         { id: { contains: search, mode: 'insensitive' } },
         { commodity: { name: { contains: search, mode: 'insensitive' } } }
       ];
+    }
+    
+    if (filterStatus && filterStatus !== 'SEMUA') {
+      whereClause.status = filterStatus;
     }
 
     const [transactions, total] = await Promise.all([
@@ -77,7 +82,6 @@ export const getTransactions = async (req: Request, res: Response) => {
     ]);
 
     const formattedTransactions = transactions.map(t => {
-      // Create a shorter ID for display based on UUID (first 8 chars)
       const shortId = `TX-${t.id.substring(0, 6).toUpperCase()}`;
       
       return {
@@ -86,7 +90,6 @@ export const getTransactions = async (req: Request, res: Response) => {
         commodity: t.commodity.name,
         location: t.market,
         price: t.price,
-        // Format date string to match mock data like "2024-05-17 08:30"
         date: t.date.toISOString().replace('T', ' ').substring(0, 16),
         status: t.status,
         source: t.source
@@ -103,6 +106,117 @@ export const getTransactions = async (req: Request, res: Response) => {
         totalPages: Math.ceil(total / limit)
       }
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const search = req.query.search as string || '';
+    
+    const whereClause: any = {};
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const users = await prisma.user.findMany({
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const formattedUsers = users.map(u => ({
+      id: `USR-${u.id.substring(0, 4).toUpperCase()}`,
+      fullId: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      lastLogin: u.lastLogin ? u.lastLogin.toISOString().replace('T', ' ').substring(0, 16) : '-',
+    }));
+
+    res.json({
+      success: true,
+      data: formattedUsers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password, role, status } = req.body;
+    
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Email sudah terdaftar' });
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password, // In a real app, hash this!
+        role,
+        status,
+      }
+    });
+
+    res.json({ success: true, data: newUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { name, email, role, status, password } = req.body;
+
+    const dataToUpdate: any = { name, email, role, status };
+    if (password) {
+      dataToUpdate.password = password; // Should hash in real app
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: dataToUpdate
+    });
+
+    res.json({ success: true, data: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    
+    // Mock current logged in user protection (Budi Santoso)
+    const userToDelete = await prisma.user.findUnique({ where: { id } });
+    
+    if (!userToDelete) {
+      return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+    }
+
+    if (userToDelete.email === 'budi@admin.com') {
+      return res.status(403).json({ success: false, message: 'Admin root tidak dapat menghapus dirinya sendiri' });
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    res.json({ success: true, message: 'User berhasil dihapus' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });

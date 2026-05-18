@@ -23,6 +23,9 @@ export default function AdminDashboard() {
   
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('SEMUA');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 5, totalPages: 1 });
   
   const fetchMetrics = async () => {
@@ -40,7 +43,7 @@ export default function AdminDashboard() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/admin/transactions?page=${page}&limit=5&search=${search}`);
+      const res = await fetch(`http://localhost:5001/api/admin/transactions?page=${page}&limit=5&search=${search}&status=${filterStatus}`);
       const json = await res.json();
       if (json.success) {
         setTransactions(json.data);
@@ -59,7 +62,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, search]);
+  }, [page, search, filterStatus]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -119,9 +122,27 @@ export default function AdminDashboard() {
                 className="outline-none text-sm font-mono w-full md:w-48 uppercase placeholder-accent-grey" 
               />
             </div>
-            <button className="border-2 border-border-color bg-white px-3 py-1 flex items-center hover:bg-surface font-mono text-sm uppercase font-bold">
-              <Filter size={16} className="mr-2" /> Filter
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className="border-2 border-border-color bg-white px-3 py-1 flex items-center hover:bg-surface font-mono text-sm uppercase font-bold"
+              >
+                <Filter size={16} className="mr-2" /> Filter
+              </button>
+              {showFilterDropdown && (
+                <div className="absolute right-0 mt-1 w-48 bg-white border-2 border-border-color shadow-brutal z-20">
+                  {['SEMUA', 'VALID', 'PENDING_REVIEW', 'FAIL'].map(status => (
+                    <div 
+                      key={status}
+                      onClick={() => { setFilterStatus(status); setShowFilterDropdown(false); setPage(1); }}
+                      className="px-4 py-2 hover:bg-surface cursor-pointer font-mono text-sm"
+                    >
+                      {status === 'SEMUA' ? 'Semua Status' : status}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -185,7 +206,10 @@ export default function AdminDashboard() {
                       )}
                     </td>
                     <td className="p-4 text-right">
-                      <button className="text-xs border-2 border-foreground px-2 py-1 font-bold hover:bg-foreground hover:text-white transition-colors">
+                      <button 
+                        onClick={() => setSelectedTx(item)}
+                        className="text-xs border-2 border-foreground px-2 py-1 font-bold hover:bg-foreground hover:text-white transition-colors"
+                      >
                         DETAIL
                       </button>
                     </td>
@@ -241,6 +265,44 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+      {/* Detail Modal */}
+      {selectedTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white border-4 border-foreground shadow-brutal p-6 w-[500px] max-w-full relative">
+            <button 
+              onClick={() => setSelectedTx(null)}
+              className="absolute top-4 right-4 hover:text-accent-red"
+            >
+              <XCircle size={24} />
+            </button>
+            <h3 className="font-bold uppercase tracking-tight text-xl mb-4 border-b-2 border-border-color pb-2">
+              Detail Transaksi
+            </h3>
+            <div className="font-mono text-sm space-y-4">
+              <div><span className="text-accent-grey block">ID Transaksi</span><span className="font-bold">{selectedTx.fullId}</span></div>
+              <div><span className="text-accent-grey block">Komoditas</span><span className="font-bold">{selectedTx.commodity}</span></div>
+              <div><span className="text-accent-grey block">Lokasi Pasar</span><span className="font-bold">{selectedTx.location}</span></div>
+              <div><span className="text-accent-grey block">Harga</span><span className="font-bold text-lg">Rp {selectedTx.price.toLocaleString("id-ID")}</span></div>
+              <div><span className="text-accent-grey block">Waktu Masuk</span><span>{selectedTx.date}</span></div>
+              <div><span className="text-accent-grey block">Sumber Data</span><span>{selectedTx.source}</span></div>
+              <div>
+                <span className="text-accent-grey block mb-1">Status Validasi</span>
+                {selectedTx.status === "VALID" && <span className="inline-block px-2 py-1 bg-green-100 text-accent-green font-bold border border-accent-green">VALID</span>}
+                {selectedTx.status === "PENDING_REVIEW" && <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-700 font-bold border border-yellow-700">PENDING REVIEW</span>}
+                {selectedTx.status === "FAIL" && <span className="inline-block px-2 py-1 bg-red-100 text-accent-red font-bold border border-accent-red">DITOLAK</span>}
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={() => setSelectedTx(null)}
+                className="px-4 py-2 bg-foreground text-white font-mono font-bold hover:bg-black transition-colors"
+              >
+                TUTUP
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
