@@ -21,6 +21,11 @@ interface PredictionResponse {
       confidenceLevel: string;
     };
     forecast: PredictionData[];
+    trendDirection?: string;
+    priceChangePercent?: number;
+    volatility?: string;
+    alertTrigger?: string;
+    dynamicNote?: string;
   };
 }
 
@@ -175,7 +180,7 @@ export default function PredictionSection({ commodityId, name }: PredictionSecti
           <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-sm font-mono text-gray-800 flex items-start">
             <Info size={20} className="mr-3 flex-shrink-0 mt-0.5 text-yellow-600" />
             <div>
-              <strong>Catatan Prediksi:</strong> Garis hitam adalah harga prediksi. Garis putus-putus menunjukkan interval kepercayaan {prediction.metrics.confidenceLevel}. Pergerakan harga asli kemungkinan besar akan berada di dalam rentang tersebut berdasarkan pola tren 90 hari terakhir.
+              <strong>Catatan Prediksi:</strong> {prediction.dynamicNote || `Garis hitam adalah harga prediksi. Garis putus-putus menunjukkan interval kepercayaan ${prediction.metrics.confidenceLevel}. Pergerakan harga asli kemungkinan besar akan berada di dalam rentang tersebut berdasarkan pola tren 90 hari terakhir.`}
             </div>
           </div>
         </>

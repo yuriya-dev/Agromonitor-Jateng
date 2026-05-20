@@ -50,6 +50,31 @@ async function main() {
             console.log(`Seeded 60 days of price data for ${commodity.name}`);
         }
     }
+    // Seed Users if none exist
+    const existingUsers = await prisma.user.count();
+    if (existingUsers === 0) {
+        const users = [
+            { name: "Budi Santoso", email: "budi@admin.com", password: "hashed_password", role: "ADMIN", status: "ACTIVE", lastLogin: new Date("2024-05-17T08:30:00Z") },
+            { name: "Siti Rahma", email: "siti@admin.com", password: "hashed_password", role: "EDITOR", status: "ACTIVE", lastLogin: new Date("2024-05-17T07:15:00Z") },
+            { name: "Andi Wijaya", email: "andi@admin.com", password: "hashed_password", role: "VIEWER", status: "INACTIVE", lastLogin: new Date("2024-05-15T16:45:00Z") },
+            { name: "Dewi Lestari", email: "dewi@admin.com", password: "hashed_password", role: "VIEWER", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:20:00Z") },
+        ];
+        // We have to cast role to any because the enum in seed.ts might not match directly if Prisma client wasn't regenerated, but it should be fine.
+        // Let's rely on Prisma client types.
+        for (const u of users) {
+            await prisma.user.create({
+                data: {
+                    name: u.name,
+                    email: u.email,
+                    password: u.password,
+                    role: u.role,
+                    status: u.status,
+                    lastLogin: u.lastLogin
+                }
+            });
+            console.log(`Created user: ${u.name}`);
+        }
+    }
     console.log('Seeding finished.');
 }
 main()

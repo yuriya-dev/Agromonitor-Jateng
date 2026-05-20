@@ -51,7 +51,7 @@ export const getCommodityPrediction = async (req: Request, res: Response) => {
     const region = typeof req.query.pasar === 'string' ? req.query.pasar : undefined;
     const days = parseInt(req.query.days as string) || 14; // Default 14 hari
 
-    const prediction = getPredictionBySlug(slug, days, region);
+    const prediction = await getPredictionBySlug(slug, days, region);
 
     if (!prediction) {
       return res.status(404).json({ success: false, message: 'Data tidak cukup untuk melakukan prediksi' });
@@ -65,6 +65,11 @@ export const getCommodityPrediction = async (req: Request, res: Response) => {
         modelUsed: prediction.modelUsed,
         metrics: prediction.metrics,
         forecast: prediction.forecast,
+        trendDirection: prediction.trendDirection,
+        priceChangePercent: prediction.priceChangePercent,
+        volatility: prediction.volatility,
+        alertTrigger: prediction.alertTrigger,
+        dynamicNote: prediction.dynamicNote,
       }
     });
 

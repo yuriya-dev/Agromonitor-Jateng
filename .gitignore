@@ -126,3 +126,12 @@ dist
 docs/
 project_dokumentation.md
 storage/
+
+# Python Virtual Environment and Cache for ML Service
+ml-service/__pycache__/
+ml-service/env/
+ml-service/venv/
+ml-service/.venv/
+ml-service/*.pyc
+ml-service/*.pyo
+ml-service/*.pyd

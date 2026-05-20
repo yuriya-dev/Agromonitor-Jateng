@@ -231,7 +231,15 @@ function buildPrediction(rows: StorageRow[], days: number) {
   const series = dates.map((date) => average((byDate.get(date) ?? []).map((row) => row.harga)));
 
   if (series.length < 2) {
-    return { metrics: { mape: 0, rmse: 0 }, forecast: [] as Array<{ time: string; value: number; upperBound: number; lowerBound: number }> };
+    return {
+      metrics: { mape: 0, rmse: 0 },
+      forecast: [] as Array<{ time: string; value: number; upperBound: number; lowerBound: number }>,
+      trendDirection: 'STABLE',
+      priceChangePercent: 0,
+      volatility: 'RENDAH',
+      alertTrigger: 'NONE',
+      dynamicNote: 'Data historis tidak mencukupi untuk analisis tren.'
+    };
   }
 
   let sumX = 0;
@@ -280,12 +288,59 @@ function buildPrediction(rows: StorageRow[], days: number) {
     });
   }
 
+  const lastHistoricalPrice = series[series.length - 1];
+  const finalForecastedPrice = forecast[forecast.length - 1].value;
+  const priceChangePercent = lastHistoricalPrice > 0 ? ((finalForecastedPrice - lastHistoricalPrice) / lastHistoricalPrice) * 100 : 0.0;
+
+  let trendDirection = 'STABLE';
+  let trendDesc = 'stabil';
+  if (priceChangePercent > 1.5) {
+    trendDirection = 'UP';
+    trendDesc = 'naik';
+  } else if (priceChangePercent < -1.5) {
+    trendDirection = 'DOWN';
+    trendDesc = 'turun';
+  }
+
+  const avgForecastVal = average(forecast.map(f => f.value)) || 1;
+  const avgConfWidth = (2 * ciBand) / avgForecastVal;
+  
+  let volatility = 'RENDAH';
+  if (avgConfWidth > 0.15) {
+    volatility = 'TINGGI';
+  } else if (avgConfWidth > 0.08) {
+    volatility = 'SEDANG';
+  }
+
+  let alertTrigger = 'NONE';
+  if (priceChangePercent >= 5.0) {
+    alertTrigger = 'CRITICAL';
+  } else if (priceChangePercent >= 1.5 || priceChangePercent <= -3.0 || volatility === 'TINGGI') {
+    alertTrigger = 'WARNING';
+  }
+
+  const commodityName = rows[0]?.komoditas ?? 'Komoditas';
+
+  let dynamicNote = '';
+  if (trendDirection === 'UP') {
+    dynamicNote = `Berdasarkan analisis model baseline, harga ${commodityName} diprediksi mengalami tren ${trendDesc} sebesar ${priceChangePercent.toFixed(2)}% dalam ${days} hari ke depan (dari Rp ${lastHistoricalPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })} menjadi Rp ${finalForecastedPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })}). Volatilitas peramalan dinilai ${volatility.toLowerCase()} dengan interval kepercayaan 95%. Harap waspada terhadap potensi kenaikan harga di pasar.`;
+  } else if (trendDirection === 'DOWN') {
+    dynamicNote = `Berdasarkan analisis model baseline, harga ${commodityName} diprediksi mengalami tren ${trendDesc} sebesar ${Math.abs(priceChangePercent).toFixed(2)}% dalam ${days} hari ke depan (dari Rp ${lastHistoricalPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })} menjadi Rp ${finalForecastedPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })}). Volatilitas peramalan dinilai ${volatility.toLowerCase()} dengan interval kepercayaan 95%. Penurunan ini mengindikasikan pasokan komoditas yang melimpah.`;
+  } else {
+    dynamicNote = `Berdasarkan analisis model baseline, harga ${commodityName} diprediksi relatif ${trendDesc} dengan proyeksi perubahan ${priceChangePercent >= 0 ? '+' : ''}${priceChangePercent.toFixed(2)}% dalam ${days} hari ke depan (dari Rp ${lastHistoricalPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })} menjadi Rp ${finalForecastedPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })}). Volatilitas peramalan dinilai ${volatility.toLowerCase()} dengan interval kepercayaan 95%, menunjukkan kondisi pasar yang kondusif.`;
+  }
+
   return {
     metrics: {
       mape: parseFloat(mape.toFixed(2)),
       rmse: parseFloat(rmse.toFixed(2)),
     },
     forecast,
+    trendDirection,
+    priceChangePercent: parseFloat(priceChangePercent.toFixed(2)),
+    volatility,
+    alertTrigger,
+    dynamicNote
   };
 }
 
@@ -311,7 +366,7 @@ export function getCommodityHistoryBySlug(slug: string, region?: string, dateFil
   return toCommodityHistory(normalizedSlug, rows);
 }
 
-export function getPredictionBySlug(slug: string, days: number, region?: string) {
+export async function getPredictionBySlug(slug: string, days: number, region?: string) {
   const normalizedSlug = slugify(slug);
   const rows = loadRows()
     .filter((row) => !region || normalizeText(row.kabupatenKota).includes(normalizeText(region)))
@@ -321,6 +376,35 @@ export function getPredictionBySlug(slug: string, days: number, region?: string)
     return null;
   }
 
+  // Coba memanggil Python ML-service di port 5002
+  try {
+    const url = `http://127.0.0.1:5002/predict?slug=${normalizedSlug}&days=${days}${region ? `&region=${encodeURIComponent(region)}` : ''}`;
+    const response = await fetch(url);
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data) {
+        console.log(`[ML-Service] Berhasil mengambil prediksi ARIMA untuk ${normalizedSlug}`);
+        return {
+          commodityId: result.data.commodityId,
+          commodityName: result.data.commodityName,
+          unit: result.data.unit,
+          modelUsed: result.data.modelUsed,
+          metrics: result.data.metrics,
+          forecast: result.data.forecast,
+          trendDirection: result.data.trendDirection,
+          priceChangePercent: result.data.priceChangePercent,
+          volatility: result.data.volatility,
+          alertTrigger: result.data.alertTrigger,
+          dynamicNote: result.data.dynamicNote,
+        };
+      }
+    }
+    console.warn(`[ML-Service] Microservice mengembalikan respons tidak sukses untuk ${normalizedSlug}. Menggunakan fallback tren TypeScript.`);
+  } catch (error) {
+    console.warn(`[ML-Service] Microservice tidak dapat dihubungi untuk ${normalizedSlug}: ${(error as Error).message}. Menggunakan fallback tren TypeScript.`);
+  }
+
+  // Fallback ke metode TS bawaan (regresi linier) jika microservice offline/error
   const history = toCommodityHistory(normalizedSlug, rows);
   const prediction = buildPrediction(rows, days);
 
@@ -335,5 +419,10 @@ export function getPredictionBySlug(slug: string, days: number, region?: string)
       confidenceLevel: '95%',
     },
     forecast: prediction.forecast,
+    trendDirection: prediction.trendDirection,
+    priceChangePercent: prediction.priceChangePercent,
+    volatility: prediction.volatility,
+    alertTrigger: prediction.alertTrigger,
+    dynamicNote: prediction.dynamicNote,
   };
 }

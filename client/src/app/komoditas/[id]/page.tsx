@@ -20,6 +20,7 @@ export default async function CommodityDetail({ params }: { params: { id: string
   let commodityData = null;
   let tickerItems = [];
   
+  let predictionData = null;
   try {
     // Fetch specific commodity
     const res = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}`, { cache: 'no-store' });
@@ -33,6 +34,13 @@ export default async function CommodityDetail({ params }: { params: { id: string
     const allData = await allRes.json();
     if (allData.success) {
       tickerItems = allData.data;
+    }
+
+    // Fetch prediction for dynamic alerts
+    const predRes = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}/predict?days=14`, { cache: 'no-store' });
+    const predData = await predRes.json();
+    if (predData.success) {
+      predictionData = predData.data;
     }
   } catch (error) {
     console.error("Gagal mengambil data", error);
@@ -144,15 +152,57 @@ export default async function CommodityDetail({ params }: { params: { id: string
               </div>
             </div>
 
-            <div className="bg-white border-2 border-border-color p-6 shadow-brutal flex items-start space-x-4">
-              <div className="bg-accent-red text-white p-3">
-                <AlertTriangle size={24} />
+            {predictionData ? (
+              <div className={`p-6 border-2 border-border-color shadow-brutal flex items-start space-x-4 ${
+                predictionData.alertTrigger === 'CRITICAL' 
+                  ? 'bg-red-50 text-red-900 border-red-500' 
+                  : predictionData.alertTrigger === 'WARNING' 
+                  ? 'bg-yellow-50 text-yellow-900 border-yellow-500' 
+                  : 'bg-green-50 text-green-900 border-green-500'
+              }`}>
+                <div className={`p-3 text-white ${
+                  predictionData.alertTrigger === 'CRITICAL' 
+                    ? 'bg-accent-red' 
+                    : predictionData.alertTrigger === 'WARNING' 
+                    ? 'bg-yellow-600' 
+                    : 'bg-accent-green'
+                }`}>
+                  <AlertTriangle size={24} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold uppercase tracking-tight">
+                    Peringatan Harga ({
+                      predictionData.alertTrigger === 'CRITICAL' 
+                        ? 'Kritis' 
+                        : predictionData.alertTrigger === 'WARNING' 
+                        ? 'Waspada' 
+                        : 'Aman'
+                    })
+                  </h4>
+                  <p className="text-sm mt-1">
+                    {predictionData.alertTrigger === 'CRITICAL' && (
+                      `⚠️ AWAS! Berdasarkan model ARIMA, harga ${name} diprediksi naik signifikan sebesar ${predictionData.priceChangePercent.toFixed(2)}% dalam 14 hari ke depan. Harap waspada terhadap potensi inflasi!`
+                    )}
+                    {predictionData.alertTrigger === 'WARNING' && (
+                      `⚠️ PERINGATAN: Harga ${name} diprediksi mengalami perubahan sebesar ${predictionData.priceChangePercent.toFixed(2)}% dalam 14 hari ke depan dengan tingkat volatilitas ${predictionData.volatility.toLowerCase()}.`
+                    )}
+                    {predictionData.alertTrigger === 'NONE' && (
+                      `✅ INFO TREN: Harga ${name} diprediksi stabil/kondusif dalam 14 hari ke depan dengan proyeksi perubahan sebesar ${predictionData.priceChangePercent.toFixed(2)}%.`
+                    )}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold uppercase tracking-tight">Peringatan Harga</h4>
-                <p className="text-sm mt-1">Harga {name} saat ini berada 15% di atas Harga Acuan Pembelian (HAP) Pemerintah.</p>
+            ) : (
+              <div className="bg-white border-2 border-border-color p-6 shadow-brutal flex items-start space-x-4">
+                <div className="bg-accent-red text-white p-3">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h4 className="font-bold uppercase tracking-tight">Peringatan Harga</h4>
+                  <p className="text-sm mt-1">Gagal memuat analisis tren harga terbaru dari model prediksi.</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Chart & Analysis */}

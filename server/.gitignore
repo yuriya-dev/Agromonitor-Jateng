@@ -3,3 +3,8 @@ node_modules
 .env
 
 /src/generated/prisma
+
+# Ignore typescript compiled files in source
+/src/**/*.js
+/src/**/*.js.map
+/src/**/*.d.ts
