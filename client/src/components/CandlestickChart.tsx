@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { createChart, ColorType, IChartApi, CandlestickSeries } from "lightweight-charts";
 
 interface CandlestickData {
@@ -18,9 +18,27 @@ interface CandlestickChartProps {
 export default function CandlestickChart({ data }: CandlestickChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const [days, setDays] = useState<number | null>(30); // Default to 30 days (1 month)
+
+  // Saring data berdasarkan hari terpilih secara efisien di sisi klien
+  const filteredData = useMemo(() => {
+    if (!days || data.length === 0) return data;
+
+    const latestDateStr = data[data.length - 1]?.time;
+    if (!latestDateStr) return data;
+
+    const latestDate = new Date(latestDateStr);
+    const cutoffDate = new Date(latestDate);
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    return data.filter((item) => {
+      const itemDate = new Date(item.time);
+      return itemDate >= cutoffDate;
+    });
+  }, [data, days]);
 
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!chartContainerRef.current || filteredData.length === 0) return;
 
     // Create Chart
     const chart = createChart(chartContainerRef.current, {
@@ -66,7 +84,10 @@ export default function CandlestickChart({ data }: CandlestickChartProps) {
       wickDownColor: "#D32F2F",
     });
 
-    candlestickSeries.setData(data);
+    candlestickSeries.setData(filteredData);
+
+    // Fit content so the selected timeframe is scaled correctly
+    chart.timeScale().fitContent();
 
     // Handle Resize
     const handleResize = () => {
@@ -81,17 +102,31 @@ export default function CandlestickChart({ data }: CandlestickChartProps) {
       window.removeEventListener("resize", handleResize);
       chart.remove();
     };
-  }, [data]);
+  }, [filteredData]);
 
   return (
     <div className="w-full bg-white border-2 border-border-color shadow-brutal relative p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-bold uppercase tracking-tight text-lg">Pergerakan Harga (IDR)</h3>
         <div className="flex space-x-2">
-          <button className="text-xs font-mono px-3 py-1 bg-surface border border-border-color hover:bg-black hover:text-white transition-colors">1W</button>
-          <button className="text-xs font-mono px-3 py-1 bg-black text-white border border-border-color transition-colors">1M</button>
-          <button className="text-xs font-mono px-3 py-1 bg-surface border border-border-color hover:bg-black hover:text-white transition-colors">3M</button>
-          <button className="text-xs font-mono px-3 py-1 bg-surface border border-border-color hover:bg-black hover:text-white transition-colors">YTD</button>
+          {[
+            { label: "7 HARI", val: 7 },
+            { label: "30 HARI", val: 30 },
+            { label: "3 BULAN", val: 90 },
+            { label: "SEMUA", val: null },
+          ].map((tf) => (
+            <button
+              key={tf.label}
+              onClick={() => setDays(tf.val)}
+              className={`text-xs font-mono px-3 py-1 border border-border-color transition-colors ${
+                days === tf.val
+                  ? "bg-black text-white animate-pulse-once"
+                  : "bg-surface hover:bg-gray-200 text-black"
+              }`}
+            >
+              {tf.label}
+            </button>
+          ))}
         </div>
       </div>
       <div ref={chartContainerRef} className="w-full" />
