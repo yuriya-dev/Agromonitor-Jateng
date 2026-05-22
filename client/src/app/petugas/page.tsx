@@ -2,72 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Camera, CheckCircle2, Clock3, Loader2, LogOut, MapPin, Send, Navigation, Package, Calendar, AlertTriangle } from 'lucide-react';
-
-type LocationState = {
-  latitude: number | null;
-  longitude: number | null;
-  accuracy: number | null;
-  label: string;
-  mapUrl: string;
-};
-
-const commodityOptions = [
-  { value: 'beras-medium', label: 'Beras Medium (Kg)' },
-  { value: 'beras-premium', label: 'Beras Premium (Kg)' },
-  { value: 'bawang-merah', label: 'Bawang Merah (Kg)' },
-  { value: 'bawang-putih', label: 'Bawang Putih (Kg)' },
-  { value: 'cabai-rawit', label: 'Cabai Rawit (Kg)' },
-  { value: 'daging-sapi', label: 'Daging Sapi (Kg)' },
-  { value: 'telur-ayam', label: 'Telur Ayam Ras (Kg)' },
-];
-
-const commodityLabels: Record<string, string> = commodityOptions.reduce((accumulator, option) => {
-  accumulator[option.value] = option.label;
-  return accumulator;
-}, {} as Record<string, string>);
-
-const MAX_IMAGE_WIDTH = 1280;
-const JPEG_QUALITY = 0.82;
-
-const compressImageFile = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onerror = () => reject(new Error('Gagal membaca file foto.'));
-    reader.onload = () => {
-      const image = new Image();
-
-      image.onerror = () => reject(new Error('Gagal memproses foto JPG.'));
-      image.onload = () => {
-        const scale = Math.min(1, MAX_IMAGE_WIDTH / image.width);
-        const width = Math.round(image.width * scale);
-        const height = Math.round(image.height * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-
-        const context = canvas.getContext('2d');
-
-        if (!context) {
-          reject(new Error('Browser tidak mendukung pemrosesan foto.'));
-          return;
-        }
-
-        context.drawImage(image, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
-      };
-
-      image.src = typeof reader.result === 'string' ? reader.result : '';
-    };
-
-    reader.readAsDataURL(file);
-  });
+import { AlertTriangle, Calendar, Camera, CheckCircle2, Clock3, Loader2, LogOut, MapPin, Menu, Navigation, Package, Send, ChevronRight, User2 } from 'lucide-react';
+import { commodityLabels, commodityOptions, compressImageFile, petugasProfile, type LocationState } from './_lib/petugas';
 
 export default function PetugasLapanganPage() {
-  const [petugasCode, setPetugasCode] = useState('PTG-194');
-  const [petugasName, setPetugasName] = useState('Slamet Riyadi');
-  const [petugasEmail, setPetugasEmail] = useState('petugas@agromonitor.local');
+  const petugasCode = petugasProfile.code;
+  const petugasName = petugasProfile.name;
+  const petugasEmail = petugasProfile.email;
   const [reportDate, setReportDate] = useState('');
   const [commoditySlug, setCommoditySlug] = useState('beras-medium');
   const [market, setMarket] = useState('Pasar Johar, Semarang');
@@ -86,10 +27,23 @@ export default function PetugasLapanganPage() {
   const [gpsError, setGpsError] = useState('');
   const [submitState, setSubmitState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setReportDate(new Date().toISOString().split('T')[0]);
+  }, []);
+
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
   }, []);
 
   const takeGps = () => {
@@ -217,26 +171,72 @@ export default function PetugasLapanganPage() {
   return (
     <main className="min-h-screen bg-surface font-sans flex flex-col items-center">
       <div className="w-full max-w-md min-h-screen bg-white border-x-2 border-border-color shadow-brutal flex flex-col relative">
-        <header className="bg-background border-b-2 border-border-color p-4 sticky top-0 z-50 flex justify-between items-center">
+        <header className="bg-background border-b-2 border-border-color p-4 sticky top-0 z-50 flex justify-between items-center relative">
           <div>
             <h1 className="text-xl font-bold tracking-tight uppercase flex items-center">
               AGRO<span className="text-accent-red">ENTRY</span>
             </h1>
             <p className="text-[10px] font-mono text-accent-grey uppercase tracking-widest mt-1">Portal Petugas Lapangan</p>
           </div>
-          <Link href="/login" className="p-2 border-2 border-border-color bg-surface hover:bg-accent-red hover:text-white transition-colors active:translate-y-1">
-            <LogOut size={16} />
-          </Link>
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((value) => !value)}
+              className="p-2 border-2 border-border-color bg-surface hover:bg-foreground hover:text-white transition-colors active:translate-y-1"
+              aria-label="Buka menu petugas"
+            >
+              <Menu size={16} />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 mt-3 w-56 bg-white border-2 border-border-color shadow-brutal z-50 overflow-hidden">
+                <div className="bg-surface p-3 border-b-2 border-border-color">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-foreground text-white flex items-center justify-center border-2 border-border-color">
+                      <User2 size={18} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold uppercase">{petugasName}</div>
+                      <div className="text-[10px] font-mono text-accent-grey uppercase">{petugasCode}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2">
+                  <Link href="/petugas/profile" className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors" onClick={() => setMenuOpen(false)}>
+                    <span className="text-sm font-bold uppercase">Profil Petugas</span>
+                    <ChevronRight size={16} />
+                  </Link>
+                  <Link href="/petugas/riwayat" className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors" onClick={() => setMenuOpen(false)}>
+                    <span className="text-sm font-bold uppercase flex items-center gap-2">
+                      <Package size={14} /> Riwayat Survei
+                    </span>
+                    <ChevronRight size={16} />
+                  </Link>
+                  <Link href="/login" className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors">
+                    <span className="text-sm font-bold uppercase flex items-center gap-2">
+                      <LogOut size={14} /> Keluar
+                    </span>
+                    <ChevronRight size={16} />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="bg-surface border-b-2 border-border-color p-4 flex flex-col space-y-3">
-          <div className="flex justify-between items-center">
-            <div className="text-xs font-mono font-bold uppercase">Petugas ID: {petugasCode}</div>
-            <div className="text-xs font-mono font-bold uppercase text-accent-green flex items-center">
-              <div className="w-2 h-2 bg-accent-green rounded-full mr-2 animate-pulse"></div>
-              ONLINE
+          <div className="bg-white border-2 border-border-color p-3 shadow-brutal flex items-start gap-3">
+            <div className="w-11 h-11 bg-foreground text-white flex items-center justify-center border-2 border-border-color shrink-0">
+              <User2 size={20} />
+            </div>
+            <div className="flex-1">
+              <div className="text-[10px] font-mono text-accent-grey uppercase">Profil Petugas</div>
+              <div className="mt-1 text-lg font-bold uppercase leading-tight">{petugasName}</div>
+              <div className="text-xs font-mono uppercase text-accent-grey mt-1">{petugasCode}</div>
+              <div className="text-xs font-mono text-accent-grey mt-1 break-all">{petugasEmail}</div>
             </div>
           </div>
+
           <div className="bg-white border-2 border-border-color p-3 flex items-start shadow-brutal">
             <MapPin size={18} className="text-accent-red mr-3 mt-0.5" />
             <div className="flex-1">
@@ -274,20 +274,6 @@ export default function PetugasLapanganPage() {
           <h2 className="text-lg font-bold uppercase mb-6 tracking-tight border-b-2 border-foreground pb-2 inline-block">Input Harga Harian</h2>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <label className="block text-xs font-mono font-bold uppercase text-accent-grey">ID Petugas</label>
-              <input value={petugasCode} onChange={(event) => setPetugasCode(event.target.value)} className="w-full border-2 border-border-color bg-white p-3 font-mono text-sm outline-none focus:border-foreground uppercase" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-mono font-bold uppercase text-accent-grey">Nama Petugas</label>
-              <input value={petugasName} onChange={(event) => setPetugasName(event.target.value)} className="w-full border-2 border-border-color bg-white p-3 font-mono text-sm outline-none focus:border-foreground" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-mono font-bold uppercase text-accent-grey">Email Petugas</label>
-              <input value={petugasEmail} onChange={(event) => setPetugasEmail(event.target.value)} type="email" className="w-full border-2 border-border-color bg-white p-3 font-mono text-sm outline-none focus:border-foreground" />
-            </div>
 
             <div className="space-y-2">
               <label className="block text-xs font-mono font-bold uppercase text-accent-grey">Tanggal Pencatatan</label>
@@ -384,6 +370,7 @@ export default function PetugasLapanganPage() {
               </button>
             </div>
           </form>
+
         </div>
       </div>
     </main>
