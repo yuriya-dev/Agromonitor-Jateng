@@ -281,11 +281,49 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
 
     const result = { scanned: reports.length, groups: Object.keys(groups).length, created, skipped, details };
 
+    // persist aggregation run for audit/history
+    try {
+      await prisma.aggregationRun.create({
+        data: {
+          runAt: new Date(),
+          scanned: result.scanned,
+          groups: result.groups,
+          created: result.created,
+          skipped: result.skipped,
+          details: result.details as any,
+        },
+      });
+    } catch (e) {
+      console.error('Failed to persist AggregationRun', e);
+    }
+
     if (res) return res.json({ success: true, data: result });
     return result;
   } catch (error) {
     console.error(error);
     if (res) return res.status(500).json({ success: false, message: 'Server Error' });
     throw error;
+  }
+};
+
+export const getAggregationRuns = async (req: Request, res: Response) => {
+  try {
+    const runs = await prisma.aggregationRun.findMany({ orderBy: { runAt: 'desc' } });
+    return res.json({ success: true, data: runs });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+export const getAggregationRunById = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const run = await prisma.aggregationRun.findUnique({ where: { id } });
+    if (!run) return res.status(404).json({ success: false, message: 'AggregationRun not found' });
+    return res.json({ success: true, data: run });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };

@@ -98,3 +98,15 @@ model FieldReport {
   @@index([petugasCode, reportDate])
   @@index([status, createdAt])
 }
+
+// Record of aggregation runs (daily or manual) for auditing
+model AggregationRun {
+  id        String   @id @default(uuid())
+  runAt     DateTime @default(now())
+  scanned   Int
+  groups    Int
+  created   Int
+  skipped   Int
+  details   Json?
+  createdAt DateTime @default(now())
+}

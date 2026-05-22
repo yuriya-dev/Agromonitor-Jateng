@@ -37,8 +37,17 @@ app.get('/', (req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 
-  // Schedule daily aggregation at 01:00 local time
+  // Run aggregation once at startup immediately, then schedule daily at 01:00 local time
   try {
+    (async () => {
+      try {
+        console.log('Running aggregation job at startup');
+        await aggregateApprovedFieldReports();
+      } catch (e) {
+        console.error('Startup aggregation failed', e);
+      }
+    })();
+
     const scheduleDailyAt = (hour: number, minute = 0) => {
       const now = new Date();
       const next = new Date(now);

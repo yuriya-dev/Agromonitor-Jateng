@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Database, Settings, Users, ClipboardList } from "lucide-react";
+import { Database, Settings, Users, ClipboardList, BarChart3 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -60,6 +60,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Laporan Petugas
           </Link>
           <Link 
+            href="/admin/aggregations" 
+            className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
+              isActive("/admin/aggregations") 
+                ? "bg-surface border-r-4 border-accent-red text-foreground font-bold" 
+                : "hover:bg-surface text-accent-grey hover:text-foreground"
+            }`}
+          >
+            <BarChart3 size={18} className="mr-3" />
+            Aggregations
+          </Link>
+          <Link 
             href="/admin/settings" 
             className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
               isActive("/admin/settings") 
@@ -93,6 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {pathname === "/admin/users" && "Pengguna & Akses"}
             {pathname === "/admin/petugas" && "Laporan Petugas Lapangan"}
             {pathname === "/admin/settings" && "Konfigurasi Sistem"}
+            {pathname === "/admin/aggregations" && "Aggregation Runs"}
           </h2>
           <div className="flex items-center space-x-4">
             <div className="text-sm font-mono border-2 border-border-color px-3 py-1 bg-surface">
