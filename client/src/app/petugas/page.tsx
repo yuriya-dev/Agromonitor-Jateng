@@ -27,6 +27,43 @@ const commodityLabels: Record<string, string> = commodityOptions.reduce((accumul
   return accumulator;
 }, {} as Record<string, string>);
 
+const MAX_IMAGE_WIDTH = 1280;
+const JPEG_QUALITY = 0.82;
+
+const compressImageFile = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error('Gagal membaca file foto.'));
+    reader.onload = () => {
+      const image = new Image();
+
+      image.onerror = () => reject(new Error('Gagal memproses foto JPG.'));
+      image.onload = () => {
+        const scale = Math.min(1, MAX_IMAGE_WIDTH / image.width);
+        const width = Math.round(image.width * scale);
+        const height = Math.round(image.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          reject(new Error('Browser tidak mendukung pemrosesan foto.'));
+          return;
+        }
+
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+      };
+
+      image.src = typeof reader.result === 'string' ? reader.result : '';
+    };
+
+    reader.readAsDataURL(file);
+  });
+
 export default function PetugasLapanganPage() {
   const [petugasCode, setPetugasCode] = useState('PTG-194');
   const [petugasName, setPetugasName] = useState('Slamet Riyadi');
@@ -99,12 +136,22 @@ export default function PetugasLapanganPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoUrl(typeof reader.result === 'string' ? reader.result : '');
-      setPhotoName(file.name);
-    };
-    reader.readAsDataURL(file);
+    setPhotoName(file.name);
+    setMessage('');
+
+    compressImageFile(file)
+      .then((compressedPhotoUrl) => {
+        setPhotoUrl(compressedPhotoUrl);
+      })
+      .catch((error) => {
+        setPhotoUrl('');
+        setPhotoName('');
+        if (photoInputRef.current) {
+          photoInputRef.current.value = '';
+        }
+        setSubmitState('error');
+        setMessage(error instanceof Error ? error.message : 'Gagal memproses foto.');
+      });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -140,7 +187,14 @@ export default function PetugasLapanganPage() {
         }),
       });
 
-      const json = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const responseText = await response.text();
+
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Server mengembalikan respons non-JSON (${response.status}). Pastikan backend http://localhost:5001 berjalan.`);
+      }
+
+      const json = JSON.parse(responseText);
       if (!json.success) {
         throw new Error(json.message || 'Gagal mengirim laporan');
       }
@@ -301,6 +355,9 @@ export default function PetugasLapanganPage() {
                   {photoName}
                 </div>
               )}
+              <div className="text-[10px] font-mono text-accent-grey uppercase">
+                Foto JPG/PNG akan diperkecil otomatis sebelum dikirim.
+              </div>
               {photoUrl && (
                 <div className="border-2 border-border-color bg-white p-2">
                   <img src={photoUrl} alt="Pratinjau bukti" className="w-full h-40 object-cover" />

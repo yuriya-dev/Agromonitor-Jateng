@@ -9,6 +9,7 @@ import {
   Filter,
   Loader2
 } from "lucide-react";
+import { AdminTableCard } from '@/components/admin/AdminTableCard';
 
 export default function AdminDashboard() {
   type Metrics = {
@@ -126,33 +127,38 @@ export default function AdminDashboard() {
       </div>
 
       {/* Data Table Section */}
-      <div className="bg-white border-2 border-border-color shadow-brutal mb-8">
-        <div className="p-4 border-b-2 border-border-color flex flex-col md:flex-row justify-between items-center bg-surface gap-4">
-          <h3 className="font-bold uppercase tracking-tight text-lg">Log Transaksi Data Harga</h3>
-          <div className="flex space-x-2 w-full md:w-auto">
-            <div className="flex border-2 border-border-color bg-white px-3 py-1 items-center flex-1 md:flex-none">
-              <Search size={16} className="text-accent-grey mr-2" />
-              <input 
-                type="text" 
-                placeholder="CARI ID / KOMODITAS" 
+      <AdminTableCard
+        title="Log Transaksi Data Harga"
+        description="Ringkasan transaksi yang masuk ke dashboard operasional dan status validasinya."
+        actions={
+          <>
+            <div className="flex border-2 border-border-color bg-white px-3 py-1.5 items-center w-full md:w-[300px]">
+              <Search size={16} className="text-accent-grey mr-2 shrink-0" />
+              <input
+                type="text"
+                placeholder="CARI ID / KOMODITAS"
                 value={search}
                 onChange={handleSearch}
-                className="outline-none text-sm font-mono w-full md:w-48 uppercase placeholder-accent-grey" 
+                className="outline-none text-sm font-mono w-full uppercase placeholder-accent-grey"
               />
             </div>
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className="border-2 border-border-color bg-white px-3 py-1 flex items-center hover:bg-surface font-mono text-sm uppercase font-bold"
+                className="border-2 border-border-color bg-white px-3 py-1.5 flex items-center hover:bg-surface font-mono text-xs uppercase font-bold"
               >
-                <Filter size={16} className="mr-2" /> Filter
+                <Filter size={14} className="mr-2" /> Filter
               </button>
               {showFilterDropdown && (
                 <div className="absolute right-0 mt-1 w-48 bg-white border-2 border-border-color shadow-brutal z-20">
-                  {['SEMUA', 'VALID', 'PENDING_REVIEW', 'FAIL'].map(status => (
-                    <div 
+                  {['SEMUA', 'VALID', 'PENDING_REVIEW', 'FAIL'].map((status) => (
+                    <div
                       key={status}
-                      onClick={() => { setFilterStatus(status); setShowFilterDropdown(false); setPage(1); }}
+                      onClick={() => {
+                        setFilterStatus(status);
+                        setShowFilterDropdown(false);
+                        setPage(1);
+                      }}
                       className="px-4 py-2 hover:bg-surface cursor-pointer font-mono text-sm"
                     >
                       {status === 'SEMUA' ? 'Semua Status' : status}
@@ -161,25 +167,76 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </>
+        }
+        loading={loading}
+        loadingLabel="Memuat transaksi"
+        empty={!loading && transactions.length === 0}
+        emptyMessage="Tidak ada data transaksi yang ditemukan."
+        footer={
+          <div className="flex justify-between items-center font-mono text-xs md:text-sm gap-3 flex-col md:flex-row">
+            <div>
+              Menampilkan {transactions.length > 0 ? ((page - 1) * pagination.limit) + 1 : 0}-{Math.min(page * pagination.limit, pagination.total)} dari {pagination.total.toLocaleString('id-ID')} data
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 border border-border-color bg-white hover:bg-foreground hover:text-white disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-foreground transition-colors uppercase font-bold"
+              >
+                &lt; PREV
+              </button>
 
-        <div className="overflow-x-auto min-h-[300px] relative">
+              {Array.from({ length: Math.min(3, pagination.totalPages) }, (_, i) => {
+                let pageNum = page;
+                if (page === 1) pageNum = i + 1;
+                else if (page === pagination.totalPages) pageNum = pagination.totalPages - 2 + i;
+                else pageNum = page - 1 + i;
+
+                if (pageNum < 1 || pageNum > pagination.totalPages) return null;
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`px-3 py-1 border font-bold transition-colors ${
+                      pageNum === page
+                        ? 'border-foreground bg-foreground text-white'
+                        : 'border-border-color bg-white hover:bg-foreground hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                disabled={page === pagination.totalPages || pagination.totalPages === 0}
+                className="px-3 py-1 border border-border-color bg-white hover:bg-foreground hover:text-white disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-foreground transition-colors uppercase font-bold"
+              >
+                NEXT &gt;
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div className="overflow-x-auto min-h-[260px] relative">
           {loading && (
-             <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
-               <Loader2 className="animate-spin text-foreground" size={32} />
-             </div>
+            <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-foreground" size={28} />
+            </div>
           )}
-          <table className="w-full text-left border-collapse">
+          <table className="w-full table-fixed text-left border-collapse">
             <thead>
               <tr className="bg-surface font-mono text-xs uppercase text-accent-grey border-b-2 border-border-color">
-                <th className="p-4 font-bold">ID Transaksi</th>
-                <th className="p-4 font-bold">Waktu Masuk</th>
-                <th className="p-4 font-bold">Sumber</th>
-                <th className="p-4 font-bold">Komoditas / Lokasi</th>
-                <th className="p-4 font-bold">Harga Input</th>
-                <th className="p-4 font-bold">Status Validasi</th>
-                <th className="p-4 font-bold text-right">Aksi</th>
+                <th className="p-3 font-bold w-[14%]">ID Transaksi</th>
+                <th className="p-3 font-bold w-[14%]">Waktu Masuk</th>
+                <th className="p-3 font-bold w-[10%]">Sumber</th>
+                <th className="p-3 font-bold w-[24%]">Komoditas / Lokasi</th>
+                <th className="p-3 font-bold w-[12%]">Harga Input</th>
+                <th className="p-3 font-bold w-[14%]">Status Validasi</th>
+                <th className="p-3 font-bold text-right w-[12%]">Aksi</th>
               </tr>
             </thead>
             <tbody className="font-mono text-sm">
@@ -191,22 +248,19 @@ export default function AdminDashboard() {
                 transactions.map((item, idx) => (
                   <tr 
                     key={item.id} 
-                    className={`border-b border-border-color group hover:bg-surface transition-colors cursor-pointer relative ${
+                    className={`border-b border-border-color border-l-4 border-transparent group hover:bg-surface hover:border-foreground transition-colors cursor-pointer relative ${
                       idx % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
                     }`}
                   >
-                    {/* Hover targeting border */}
-                    <td className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-foreground transition-colors"></td>
-                    
-                    <td className="p-4 font-bold">{item.id}</td>
-                    <td className="p-4">{item.date}</td>
-                    <td className="p-4">{item.source}</td>
-                    <td className="p-4">
+                    <td className="p-3 font-bold align-top break-words">{item.id}</td>
+                    <td className="p-3 align-top whitespace-nowrap">{item.date}</td>
+                    <td className="p-3 align-top break-words">{item.source}</td>
+                    <td className="p-3 align-top">
                       <div className="font-bold">{item.commodity}</div>
                       <div className="text-xs text-accent-grey mt-1">{item.location}</div>
                     </td>
-                    <td className="p-4 font-bold">Rp {item.price.toLocaleString("id-ID")}</td>
-                    <td className="p-4">
+                    <td className="p-3 font-bold align-top whitespace-nowrap">Rp {item.price.toLocaleString("id-ID")}</td>
+                    <td className="p-3 align-top">
                       {item.status === "VALID" && (
                         <span className="inline-flex items-center px-2 py-1 bg-green-100 text-accent-green text-xs font-bold border border-accent-green">
                           <CheckCircle size={12} className="mr-1" /> VALID
@@ -223,7 +277,7 @@ export default function AdminDashboard() {
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-3 text-right align-top whitespace-nowrap">
                       <button 
                         onClick={() => setSelectedTx(item)}
                         className="text-xs border-2 border-foreground px-2 py-1 font-bold hover:bg-foreground hover:text-white transition-colors"
@@ -237,52 +291,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        
-        <div className="p-4 bg-surface border-t-2 border-border-color flex justify-between items-center font-mono text-sm">
-          <div>Menampilkan {transactions.length > 0 ? ((page - 1) * pagination.limit) + 1 : 0}-{Math.min(page * pagination.limit, pagination.total)} dari {pagination.total.toLocaleString('id-ID')} data</div>
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 border border-border-color bg-white hover:bg-foreground hover:text-white disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-foreground transition-colors uppercase font-bold"
-            >
-              &lt; PREV
-            </button>
-            
-            {/* Generate page numbers */}
-            {Array.from({ length: Math.min(3, pagination.totalPages) }, (_, i) => {
-               let pageNum = page;
-               if (page === 1) pageNum = i + 1;
-               else if (page === pagination.totalPages) pageNum = pagination.totalPages - 2 + i;
-               else pageNum = page - 1 + i;
-               
-               if (pageNum < 1 || pageNum > pagination.totalPages) return null;
-
-               return (
-                 <button 
-                   key={pageNum}
-                   onClick={() => setPage(pageNum)}
-                   className={`px-3 py-1 border font-bold transition-colors ${
-                     pageNum === page 
-                       ? "border-foreground bg-foreground text-white" 
-                       : "border-border-color bg-white hover:bg-foreground hover:text-white"
-                   }`}
-                 >
-                   {pageNum}
-                 </button>
-               );
-            })}
-            
-            <button 
-              onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-              disabled={page === pagination.totalPages || pagination.totalPages === 0}
-              className="px-3 py-1 border border-border-color bg-white hover:bg-foreground hover:text-white disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-foreground transition-colors uppercase font-bold"
-            >
-              NEXT &gt;
-            </button>
-          </div>
-        </div>
-      </div>
+      </AdminTableCard>
       {/* Detail Modal */}
       {selectedTx && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

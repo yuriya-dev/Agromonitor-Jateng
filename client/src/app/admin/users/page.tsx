@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { UserPlus, Search, Edit2, Trash2, Loader2, X, AlertCircle } from "lucide-react";
+import { AdminTableCard } from '@/components/admin/AdminTableCard';
 
 type UserRole = 'ADMIN' | 'EDITOR' | 'PETUGAS' | 'VIEWER';
 type UserStatus = 'ACTIVE' | 'INACTIVE';
@@ -208,36 +209,41 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* Main Table Content */}
-      <div className="bg-white border-2 border-border-color shadow-brutal mb-8">
-        <div className="p-4 border-b-2 border-border-color flex justify-between items-center bg-surface">
-          <div className="flex border-2 border-border-color bg-white px-3 py-2 items-center w-72">
-            <Search size={16} className="text-accent-grey mr-2" />
-            <input 
-              type="text" 
-              placeholder="CARI NAMA / ROLE" 
+      <AdminTableCard
+        title="Manajemen Pengguna & Akses"
+        description="Atur role, status, dan data login pengguna sistem."
+        actions={
+          <div className="flex border-2 border-border-color bg-white px-3 py-1.5 items-center w-full sm:w-[280px]">
+            <Search size={16} className="text-accent-grey mr-2 shrink-0" />
+            <input
+              type="text"
+              placeholder="CARI NAMA / ROLE"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="outline-none text-sm font-mono w-full uppercase placeholder-accent-grey" 
+              className="outline-none text-sm font-mono w-full uppercase placeholder-accent-grey"
             />
           </div>
-        </div>
-
-        <div className="overflow-x-auto min-h-[300px] relative">
+        }
+        loading={loading}
+        loadingLabel="Memuat pengguna"
+        empty={!loading && users.length === 0}
+        emptyMessage="Tidak ada pengguna yang ditemukan."
+      >
+        <div className="overflow-x-auto min-h-[240px] relative">
           {loading && (
-             <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
-               <Loader2 className="animate-spin text-foreground" size={32} />
-             </div>
+            <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-foreground" size={28} />
+            </div>
           )}
-          <table className="w-full text-left border-collapse">
+          <table className="w-full table-fixed text-left border-collapse">
             <thead>
               <tr className="bg-surface font-mono text-xs uppercase text-accent-grey border-b-2 border-border-color">
-                <th className="p-4 font-bold">ID User</th>
-                <th className="p-4 font-bold">Nama Pengguna</th>
-                <th className="p-4 font-bold">Role Akses</th>
-                <th className="p-4 font-bold">Status</th>
-                <th className="p-4 font-bold">Login Terakhir</th>
-                <th className="p-4 font-bold text-right">Aksi</th>
+                <th className="p-3 font-bold w-[18%]">ID User</th>
+                <th className="p-3 font-bold w-[24%]">Nama Pengguna</th>
+                <th className="p-3 font-bold w-[14%]">Role Akses</th>
+                <th className="p-3 font-bold w-[14%]">Status</th>
+                <th className="p-3 font-bold w-[18%]">Login Terakhir</th>
+                <th className="p-3 font-bold text-right w-[12%]">Aksi</th>
               </tr>
             </thead>
             <tbody className="font-mono text-sm">
@@ -249,15 +255,13 @@ export default function AdminUsers() {
                 users.map((user, idx) => (
                   <tr 
                     key={user.id} 
-                    className={`border-b border-border-color group hover:bg-surface transition-colors relative ${
+                    className={`border-b border-border-color border-l-4 border-transparent group hover:bg-surface hover:border-foreground transition-colors relative ${
                       idx % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
                     }`}
                   >
-                    <td className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-foreground transition-colors"></td>
-                    
-                    <td className="p-4 font-bold">{user.id}</td>
-                    <td className="p-4 font-bold">{user.name}</td>
-                    <td className="p-4">
+                    <td className="p-3 font-bold align-top break-words">{user.id}</td>
+                    <td className="p-3 font-bold align-top break-words">{user.name}</td>
+                    <td className="p-3 align-top">
                       <span className={`inline-block px-2 py-1 text-xs font-bold border ${
                         user.role === "ADMIN" ? "bg-red-100 border-accent-red text-accent-red" :
                         user.role === "EDITOR" ? "bg-green-100 border-accent-green text-accent-green" :
@@ -267,14 +271,15 @@ export default function AdminUsers() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="p-3 align-top">
                       <span className={`flex items-center text-xs font-bold ${user.status === "ACTIVE" ? "text-accent-green" : "text-accent-grey"}`}>
                         <div className={`w-2 h-2 rounded-full mr-2 ${user.status === "ACTIVE" ? "bg-accent-green" : "bg-accent-grey"}`}></div>
                         {user.status}
                       </span>
                     </td>
-                    <td className="p-4 text-accent-grey">{user.lastLogin}</td>
-                    <td className="p-4 text-right flex justify-end space-x-2">
+                    <td className="p-3 text-accent-grey align-top whitespace-nowrap">{user.lastLogin}</td>
+                    <td className="p-3 text-right align-top whitespace-nowrap">
+                      <div className="flex justify-end space-x-2">
                       <button 
                         onClick={() => openEditModal(user)}
                         className="p-2 border-2 border-border-color hover:border-foreground hover:bg-foreground hover:text-white transition-colors" title="Edit Pengguna">
@@ -285,6 +290,7 @@ export default function AdminUsers() {
                         className="p-2 border-2 border-border-color hover:border-accent-red hover:bg-accent-red hover:text-white transition-colors text-accent-red" title="Hapus Pengguna">
                         <Trash2 size={16} />
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -292,7 +298,7 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
-      </div>
+      </AdminTableCard>
 
       {/* Add Modal */}
       {isAddModalOpen && (

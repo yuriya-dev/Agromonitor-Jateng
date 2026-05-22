@@ -98,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header Admin */}
-        <header className="bg-background border-b-2 border-border-color px-8 py-4 flex justify-between items-center shrink-0">
+        <header className="bg-background border-b-2 border-border-color px-6 py-3 flex justify-between items-center shrink-0">
           <h2 className="text-2xl font-bold uppercase tracking-tight">
             {pathname === "/admin" && "Manajemen Data Harga"}
             {pathname === "/admin/users" && "Pengguna & Akses"}
@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 p-6 overflow-y-auto">
           {children}
         </div>
       </main>

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, ChevronRight, BarChart3, Clock3, Database, Layers3, PlayCircle, Filter, Search } from 'lucide-react';
+import { RefreshCw, ChevronRight, BarChart3, Clock3, Database, Layers3, PlayCircle, Search } from 'lucide-react';
+import { AdminTableCard } from '@/components/admin/AdminTableCard';
 
 type AggregationRun = {
   id: string;
@@ -155,14 +156,10 @@ export default function AdminAggregationsPage() {
         </div>
       </div>
 
-      <div className="bg-white border-2 border-border-color shadow-brutal overflow-hidden">
-        <div className="p-4 border-b-2 border-border-color flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-surface">
-          <div>
-            <h3 className="font-bold uppercase tracking-tight text-lg flex items-center">
-              <Filter size={16} className="mr-2" /> Filter Status
-            </h3>
-            <p className="text-xs font-mono text-accent-grey mt-1">Saring riwayat berdasarkan hasil agregasi.</p>
-          </div>
+      <AdminTableCard
+        title="Filter Status"
+        description="Saring riwayat berdasarkan hasil agregasi."
+        actions={
           <div className="flex flex-wrap gap-2">
             {([
               ['ALL', 'Semua'],
@@ -183,8 +180,10 @@ export default function AdminAggregationsPage() {
               </button>
             ))}
           </div>
-        </div>
-      </div>
+        }
+      >
+        <div className="p-0" />
+      </AdminTableCard>
 
       {latestRun && (
         <div className="bg-white border-2 border-border-color shadow-brutal overflow-hidden">
@@ -257,37 +256,37 @@ export default function AdminAggregationsPage() {
         </div>
       )}
 
-      <div className="bg-white border-2 border-border-color shadow-brutal overflow-hidden">
-        <div className="p-4 border-b-2 border-border-color flex flex-col md:flex-row justify-between items-center bg-surface gap-4">
-          <div>
-            <h3 className="font-bold uppercase tracking-tight text-lg">Riwayat Aggregation</h3>
-            <p className="text-xs font-mono text-accent-grey mt-1">Klik detail untuk melihat isi grup dan hasil agregasi.</p>
-          </div>
-          <div className="w-full md:w-auto flex items-center justify-end gap-2 text-xs font-mono text-accent-grey uppercase">
-            <span className="inline-flex items-center px-3 py-1 border border-border-color bg-white">
-              <ChevronRight size={14} className="mr-2" /> /api/admin/aggregations
-            </span>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto min-h-[280px] relative">
+      <AdminTableCard
+        title="Riwayat Aggregation"
+        description="Klik detail untuk melihat isi grup dan hasil agregasi."
+        actions={
+          <span className="inline-flex items-center px-3 py-1 border border-border-color bg-white text-xs font-mono uppercase text-accent-grey">
+            <ChevronRight size={14} className="mr-2" /> /api/admin/aggregations
+          </span>
+        }
+        loading={loading}
+        loadingLabel="Memuat riwayat"
+        empty={!loading && filteredRuns.length === 0}
+        emptyMessage="No aggregation runs found."
+      >
+        <div className="overflow-x-auto min-h-[220px] relative">
           {loading && (
             <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
-              <div className="flex items-center font-mono font-bold uppercase tracking-wider text-sm">
-                <RefreshCw size={20} className="mr-2 animate-spin" /> Memuat data
+              <div className="flex items-center font-mono font-bold uppercase tracking-wider text-xs">
+                <RefreshCw size={18} className="mr-2 animate-spin" /> Memuat data
               </div>
             </div>
           )}
 
-          <table className="w-full text-left border-collapse">
+          <table className="w-full table-fixed text-left border-collapse">
             <thead>
               <tr className="bg-surface font-mono text-xs uppercase text-accent-grey border-b-2 border-border-color">
-                <th className="p-4 font-bold">Waktu Run</th>
-                <th className="p-4 font-bold">Scanned</th>
-                <th className="p-4 font-bold">Groups</th>
-                <th className="p-4 font-bold">Created</th>
-                <th className="p-4 font-bold">Skipped</th>
-                <th className="p-4 font-bold text-right">Aksi</th>
+                <th className="p-3 font-bold w-[26%]">Waktu Run</th>
+                <th className="p-3 font-bold w-[12%]">Scanned</th>
+                <th className="p-3 font-bold w-[12%]">Groups</th>
+                <th className="p-3 font-bold w-[12%]">Created</th>
+                <th className="p-3 font-bold w-[12%]">Skipped</th>
+                <th className="p-3 font-bold text-right w-[12%]">Aksi</th>
               </tr>
             </thead>
             <tbody className="font-mono text-sm">
@@ -301,18 +300,17 @@ export default function AdminAggregationsPage() {
                 filteredRuns.map((r, idx) => (
                   <tr
                     key={r.id}
-                    className={`border-b border-border-color group hover:bg-surface transition-colors relative ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}
+                    className={`border-b border-border-color border-l-4 border-transparent group hover:bg-surface hover:border-foreground transition-colors relative ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}
                   >
-                    <td className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-foreground transition-colors"></td>
-                    <td className="p-4 font-bold">
+                    <td className="p-3 font-bold align-top">
                       <div>{new Date(r.runAt).toLocaleString()}</div>
                       <div className="text-xs text-accent-grey mt-1">{r.id.slice(0, 8).toUpperCase()}</div>
                     </td>
-                    <td className="p-4">{r.scanned}</td>
-                    <td className="p-4">{r.groups}</td>
-                    <td className="p-4 font-bold text-accent-green">{r.created}</td>
-                    <td className="p-4 font-bold text-accent-red">{r.skipped}</td>
-                    <td className="p-4 text-right">
+                    <td className="p-3 align-top">{r.scanned}</td>
+                    <td className="p-3 align-top">{r.groups}</td>
+                    <td className="p-3 font-bold text-accent-green align-top">{r.created}</td>
+                    <td className="p-3 font-bold text-accent-red align-top">{r.skipped}</td>
+                    <td className="p-3 text-right align-top whitespace-nowrap">
                       <a
                         href={`/admin/aggregations/${r.id}`}
                         className="inline-flex items-center text-xs border-2 border-foreground px-3 py-1 font-bold hover:bg-foreground hover:text-white transition-colors"
@@ -326,7 +324,7 @@ export default function AdminAggregationsPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </AdminTableCard>
     </div>
   );
 }
