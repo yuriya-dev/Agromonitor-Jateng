@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   AlertTriangle, 
   CheckCircle,
@@ -11,58 +11,76 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [metrics, setMetrics] = useState({
+  type Metrics = {
+    totalDataHariIni: number;
+    syncStatus: string;
+    gagalValidasi: number;
+    mlStatus: string;
+  };
+
+  type TransactionItem = {
+    id: string;
+    fullId: string;
+    commodity: string;
+    location: string;
+    price: number;
+    date: string;
+    status: string;
+    source: string;
+  };
+
+  const [metrics, setMetrics] = useState<Metrics>({
     totalDataHariIni: 0,
     syncStatus: '100%',
     gagalValidasi: 0,
     mlStatus: 'ARIMA'
   });
   
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('SEMUA');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+  const [selectedTx, setSelectedTx] = useState<TransactionItem | null>(null);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 5, totalPages: 1 });
-  
-  const fetchMetrics = async () => {
+
+  const fetchMetrics = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:5001/api/admin/metrics');
       const json = await res.json();
       if (json.success) {
         setMetrics(json.data);
       }
-    } catch (error) {
-      console.error('Failed to fetch metrics:', error);
+    } catch {
+      console.error('Failed to fetch metrics');
     }
-  };
+  }, []);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:5001/api/admin/transactions?page=${page}&limit=5&search=${search}&status=${filterStatus}`);
       const json = await res.json();
       if (json.success) {
-        setTransactions(json.data);
+        setTransactions(json.data as TransactionItem[]);
         setPagination(json.pagination);
       }
-    } catch (error) {
-      console.error('Failed to fetch transactions:', error);
+    } catch {
+      console.error('Failed to fetch transactions');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, filterStatus]);
 
   useEffect(() => {
     fetchMetrics();
-  }, []);
+  }, [fetchMetrics]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, search, filterStatus]);
+  }, [fetchTransactions]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);

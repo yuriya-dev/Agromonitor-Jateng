@@ -42,19 +42,59 @@ model Price {
 
 // Model untuk Admin / Pengguna Sistem
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  name      String?
-  password  String
-  role      Role      @default(VIEWER)
-  status    String    @default("ACTIVE")
-  lastLogin DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  name                 String?
+  password             String
+  role                 Role           @default(VIEWER)
+  status               String         @default("ACTIVE")
+  lastLogin            DateTime?
+  fieldReports         FieldReport[]  @relation("FieldReportReporter")
+  reviewedFieldReports FieldReport[]  @relation("FieldReportReviewer")
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 }
 
 enum Role {
   ADMIN
   EDITOR
+  PETUGAS
   VIEWER
+}
+
+enum FieldReportStatus {
+  SUBMITTED
+  REVIEWED
+  APPROVED
+  REJECTED
+}
+
+// Laporan tugas lapangan yang dikirim petugas dengan koordinat GPS
+model FieldReport {
+  id             String             @id @default(uuid())
+  reporterId     String?
+  reporter       User?              @relation("FieldReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  petugasCode    String
+  petugasName    String
+  petugasEmail   String?
+  commoditySlug  String
+  commodityName  String
+  market         String
+  price          Float
+  reportDate     DateTime
+  latitude       Float
+  longitude      Float
+  accuracy       Float?
+  locationLabel  String
+  notes          String?
+  photoUrl       String?
+  status         FieldReportStatus @default(SUBMITTED)
+  reviewedById   String?
+  reviewedByUser User?             @relation("FieldReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([petugasCode, reportDate])
+  @@index([status, createdAt])
 }

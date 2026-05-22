@@ -1,10 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UserPlus, Search, Edit2, Trash2, Loader2, X, AlertCircle } from "lucide-react";
 
+type UserRole = 'ADMIN' | 'EDITOR' | 'PETUGAS' | 'VIEWER';
+type UserStatus = 'ACTIVE' | 'INACTIVE';
+
+type UserItem = {
+  id: string;
+  fullId: string;
+  name: string | null;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  lastLogin: string;
+};
+
+type UserFormData = {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  status: UserStatus;
+};
+
 export default function AdminUsers() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -13,36 +34,36 @@ export default function AdminUsers() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   
   // Form State
-  const initialForm = { name: '', email: '', password: '', role: 'VIEWER', status: 'ACTIVE' };
-  const [formData, setFormData] = useState(initialForm);
+  const initialForm: UserFormData = { name: '', email: '', password: '', role: 'VIEWER', status: 'ACTIVE' };
+  const [formData, setFormData] = useState<UserFormData>(initialForm);
   const [formLoading, setFormLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:5001/api/admin/users?search=${search}`);
       const json = await res.json();
       if (json.success) {
-        setUsers(json.data);
+        setUsers(json.data as UserItem[]);
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch {
+      console.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchUsers();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search]);
+  }, [fetchUsers]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -78,7 +99,7 @@ export default function AdminUsers() {
       } else {
         setErrorMsg(json.message || 'Gagal menambahkan pengguna');
       }
-    } catch (error) {
+    } catch {
       setErrorMsg('Terjadi kesalahan server');
     } finally {
       setFormLoading(false);
@@ -87,6 +108,10 @@ export default function AdminUsers() {
 
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedUser) {
+      setErrorMsg('Pengguna belum dipilih');
+      return;
+    }
     setFormLoading(true);
     setErrorMsg('');
     try {
@@ -103,7 +128,7 @@ export default function AdminUsers() {
       } else {
         setErrorMsg(json.message || 'Gagal memperbarui pengguna');
       }
-    } catch (error) {
+    } catch {
       setErrorMsg('Terjadi kesalahan server');
     } finally {
       setFormLoading(false);
@@ -111,6 +136,10 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async () => {
+    if (!selectedUser) {
+      showMessage('Pengguna belum dipilih', true);
+      return;
+    }
     setFormLoading(true);
     setErrorMsg('');
     try {
@@ -126,7 +155,7 @@ export default function AdminUsers() {
         showMessage(json.message || 'Gagal menghapus pengguna', true);
         setIsDeleteModalOpen(false);
       }
-    } catch (error) {
+    } catch {
       showMessage('Terjadi kesalahan server', true);
       setIsDeleteModalOpen(false);
     } finally {
@@ -134,7 +163,7 @@ export default function AdminUsers() {
     }
   };
 
-  const openEditModal = (user: any) => {
+  const openEditModal = (user: UserItem) => {
     setSelectedUser(user);
     setFormData({
       name: user.name || '',
@@ -147,7 +176,7 @@ export default function AdminUsers() {
     setIsEditModalOpen(true);
   };
 
-  const openDeleteModal = (user: any) => {
+  const openDeleteModal = (user: UserItem) => {
     setSelectedUser(user);
     setIsDeleteModalOpen(true);
   };
@@ -232,6 +261,7 @@ export default function AdminUsers() {
                       <span className={`inline-block px-2 py-1 text-xs font-bold border ${
                         user.role === "ADMIN" ? "bg-red-100 border-accent-red text-accent-red" :
                         user.role === "EDITOR" ? "bg-green-100 border-accent-green text-accent-green" :
+                        user.role === "PETUGAS" ? "bg-blue-100 border-blue-600 text-blue-700" :
                         "bg-gray-100 border-foreground text-foreground"
                       }`}>
                         {user.role}
@@ -299,6 +329,7 @@ export default function AdminUsers() {
                     <select name="role" value={formData.role} onChange={handleInputChange} className="w-full border-2 border-border-color p-2 outline-none focus:border-foreground">
                       <option value="ADMIN">ADMIN</option>
                       <option value="EDITOR">EDITOR</option>
+                      <option value="PETUGAS">PETUGAS</option>
                       <option value="VIEWER">VIEWER</option>
                     </select>
                   </div>
@@ -357,6 +388,7 @@ export default function AdminUsers() {
                     <select name="role" value={formData.role} onChange={handleInputChange} className="w-full border-2 border-border-color p-2 outline-none focus:border-foreground">
                       <option value="ADMIN">ADMIN</option>
                       <option value="EDITOR">EDITOR</option>
+                      <option value="PETUGAS">PETUGAS</option>
                       <option value="VIEWER">VIEWER</option>
                     </select>
                   </div>

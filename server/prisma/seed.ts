@@ -67,6 +67,7 @@ async function main() {
     const users = [
       { name: "Budi Santoso", email: "budi@admin.com", password: "hashed_password", role: "ADMIN", status: "ACTIVE", lastLogin: new Date("2024-05-17T08:30:00Z") },
       { name: "Siti Rahma", email: "siti@admin.com", password: "hashed_password", role: "EDITOR", status: "ACTIVE", lastLogin: new Date("2024-05-17T07:15:00Z") },
+      { name: "Slamet Riyadi", email: "petugas@agromonitor.local", password: "hashed_password", role: "PETUGAS", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:45:00Z") },
       { name: "Andi Wijaya", email: "andi@admin.com", password: "hashed_password", role: "VIEWER", status: "INACTIVE", lastLogin: new Date("2024-05-15T16:45:00Z") },
       { name: "Dewi Lestari", email: "dewi@admin.com", password: "hashed_password", role: "VIEWER", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:20:00Z") },
     ];
@@ -85,6 +86,33 @@ async function main() {
         }
       });
       console.log(`Created user: ${u.name}`);
+
+    const existingFieldReports = await prisma.fieldReport.count();
+    if (existingFieldReports === 0) {
+      const petugas = await prisma.user.findUnique({ where: { email: 'petugas@agromonitor.local' } });
+
+      await prisma.fieldReport.create({
+        data: {
+          reporterId: petugas?.id,
+          petugasCode: 'PTG-194',
+          petugasName: 'Slamet Riyadi',
+          petugasEmail: 'petugas@agromonitor.local',
+          commoditySlug: 'beras-medium',
+          commodityName: 'Beras Medium (Kg)',
+          market: 'Pasar Johar, Semarang',
+          price: 13500,
+          reportDate: new Date('2024-05-17T00:00:00Z'),
+          latitude: -6.9942,
+          longitude: 110.4203,
+          accuracy: 12.5,
+          locationLabel: 'Pasar Johar, Semarang',
+          notes: 'Harga stabil, stok cukup aman.',
+          photoUrl: 'https://example.com/foto-petugas.jpg',
+          status: 'SUBMITTED' as any,
+        },
+      });
+      console.log('Created sample field report');
+    }
     }
   }
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Database, Settings, Users } from "lucide-react";
+import { Database, Settings, Users, ClipboardList } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -49,6 +49,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Pengguna & Akses
           </Link>
           <Link 
+            href="/admin/petugas" 
+            className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
+              isActive("/admin/petugas") 
+                ? "bg-surface border-r-4 border-accent-red text-foreground font-bold" 
+                : "hover:bg-surface text-accent-grey hover:text-foreground"
+            }`}
+          >
+            <ClipboardList size={18} className="mr-3" />
+            Laporan Petugas
+          </Link>
+          <Link 
             href="/admin/settings" 
             className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
               isActive("/admin/settings") 
@@ -80,6 +91,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <h2 className="text-2xl font-bold uppercase tracking-tight">
             {pathname === "/admin" && "Manajemen Data Harga"}
             {pathname === "/admin/users" && "Pengguna & Akses"}
+            {pathname === "/admin/petugas" && "Laporan Petugas Lapangan"}
             {pathname === "/admin/settings" && "Konfigurasi Sistem"}
           </h2>
           <div className="flex items-center space-x-4">
