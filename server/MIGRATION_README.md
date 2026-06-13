@@ -37,3 +37,12 @@ This file outlines the minimal steps to apply Prisma migrations and deploy the s
 7) Audit
 
    - Aggregation runs are persisted in the `AggregationRun` table (fields: scanned, groups, created, skipped, details).
+
+8) Import data from the old SP2K_Fahmi Supabase DB
+
+   - Make sure your new Supabase database is configured in `server/.env` as `DATABASE_URL`.
+   - Make sure your old source database URL is configured as `SP2K_Fahmi` in `server/.env`.
+   - Run `cd server && npx prisma db push` to create the schema in the new Supabase database.
+   - Then run `cd server && npm run import:sp2k` to copy data from `SP2K_Fahmi` into the current database.
+
+   If the source tables use lowercase naming, the import script will attempt both quoted and lowercase table names automatically.

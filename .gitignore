@@ -135,3 +135,5 @@ ml-service/.venv/
 ml-service/*.pyc
 ml-service/*.pyo
 ml-service/*.pyd
+
+@script
