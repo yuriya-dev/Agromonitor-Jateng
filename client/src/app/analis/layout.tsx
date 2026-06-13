@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { 
   BarChart2, 
   Settings, 
-  Sliders,
   FileText
 } from "lucide-react";
 
@@ -53,17 +52,7 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
             <Settings size={18} className="mr-3" />
             Konfigurasi ML (ARIMA)
           </Link>
-          <Link 
-            href="/analis/saw" 
-            className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
-              isActive("/analis/saw") 
-                ? "bg-surface border-r-4 border-accent-green text-foreground font-bold" 
-                : "hover:bg-surface text-accent-grey hover:text-foreground"
-            }`}
-          >
-            <Sliders size={18} className="mr-3" />
-            Parameter SPK (SAW)
-          </Link>
+
           <Link 
             href="/analis/laporan" 
             className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors border-t border-border-color mt-4 pt-4 ${
@@ -95,7 +84,6 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
           <h2 className="text-2xl font-bold uppercase tracking-tight">
             {pathname === "/analis" && "Advanced Analytics & Prediction"}
             {pathname === "/analis/arima" && "Konfigurasi Model ARIMA"}
-            {pathname === "/analis/saw" && "Parameter SPK SAW"}
             {pathname === "/analis/laporan" && "Ekspor Laporan Analitik"}
           </h2>
           <div className="flex items-center space-x-4">
