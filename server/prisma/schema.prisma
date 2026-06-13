@@ -45,7 +45,7 @@ model User {
   id                   String         @id @default(uuid())
   email                String         @unique
   name                 String?
-  password             String
+  password             String         @default("public")
   role                 Role           @default(VIEWER)
   status               String         @default("ACTIVE")
   lastLogin            DateTime?
@@ -53,6 +53,9 @@ model User {
   reviewedFieldReports FieldReport[]  @relation("FieldReportReviewer")
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
+  whatsapp             String?
+  preferences          String?
+  notifyDaily          Boolean        @default(false)
 }
 
 enum Role {

@@ -7,6 +7,8 @@ import commodityRoutes from './routes/commodityRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/adminRoutes';
 import fieldReportRoutes from './routes/fieldReportRoutes';
+import profileRoutes from './routes/profileRoutes';
+import authRoutes from './routes/authRoutes';
 import { aggregateApprovedFieldReports } from './controllers/fieldReportController';
 
 dotenv.config();
@@ -25,6 +27,8 @@ app.use('/api/commodities', commodityRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/field-reports', fieldReportRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/auth', authRoutes);
 
 // Basic Route
 app.get('/', (req: Request, res: Response) => {

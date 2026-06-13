@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient, FieldReportStatus } from '@prisma/client';
+import { dispatchDailyNotifications } from './notificationController';
 
 const prisma = new PrismaClient();
 
@@ -293,8 +294,11 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
           details: result.details as any,
         },
       });
+
+      // Dispatch daily price notifications to subscribers matching their preferences
+      await dispatchDailyNotifications();
     } catch (e) {
-      console.error('Failed to persist AggregationRun', e);
+      console.error('Failed to persist AggregationRun or dispatch notifications', e);
     }
 
     if (res) return res.json({ success: true, data: result });

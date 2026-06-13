@@ -1,10 +1,12 @@
+import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import CommodityCard from "@/components/CommodityCard";
-import { Settings, Bell } from "lucide-react";
+import { Settings, Bell, User } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import MapFilter from "@/components/MapFilter";
 import RegionDateFilter from "@/components/RegionDateFilter";
 import ExportButton from "@/components/ExportButton";
+import Header from "@/components/Header";
 
 export const dynamic = "force-dynamic";
 
@@ -58,26 +60,9 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
 
   return (
     <main className="min-h-screen bg-surface flex flex-col">
-      {/* Header */}
-      <header className="bg-background border-b-2 border-border-color sticky top-0 z-50">
-        <div className="px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold tracking-tight uppercase flex items-center">
-              <span className="w-4 h-4 bg-foreground inline-block mr-2"></span>
-              AGROMONITOR<span className="text-accent-grey ml-2">JATENG</span>
-            </h1>
-          </div>
-          <div className="flex items-center space-x-6">
-            <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
-              <Bell size={20} />
-            </button>
-            <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
-              <Settings size={20} />
-            </button>
-          </div>
-        </div>
-        <Ticker items={commodities} />
-      </header>
+      {/* Client-side Header with auth state */}
+      <Header />
+      <Ticker items={commodities} />
 
       {/* Main Content */}
       <div className="flex-1 p-6">

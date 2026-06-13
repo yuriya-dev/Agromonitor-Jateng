@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Rajdhani, Space_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const rajdhani = Rajdhani({
@@ -30,31 +31,33 @@ export default function RootLayout({
       <body
         className={`${rajdhani.variable} ${spaceMono.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <Toaster 
-          position="top-center"
-          toastOptions={{
-            style: {
-              borderRadius: '0',
-              border: '2px solid #000',
-              boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)',
-              fontFamily: 'var(--font-space-mono)',
-              fontWeight: 'bold',
-            },
-            success: {
-              iconTheme: {
-                primary: '#00E676',
-                secondary: '#000',
+        <AuthProvider>
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              style: {
+                borderRadius: '0',
+                border: '2px solid #000',
+                boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)',
+                fontFamily: 'var(--font-space-mono)',
+                fontWeight: 'bold',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#D32F2F',
-                secondary: '#fff',
+              success: {
+                iconTheme: {
+                  primary: '#00E676',
+                  secondary: '#000',
+                },
               },
-            },
-          }}
-        />
-        {children}
+              error: {
+                iconTheme: {
+                  primary: '#D32F2F',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
