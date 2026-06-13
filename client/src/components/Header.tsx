@@ -78,12 +78,6 @@ export default function Header({ commodities }: { commodities?: any[] }) {
                 <span className="hidden sm:inline">Masuk</span>
               </button>
             )}
-            <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
-              <Bell size={20} />
-            </button>
-            <button className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
-              <Settings size={20} />
-            </button>
           </div>
         </div>
       </header>
