@@ -36,6 +36,8 @@ export default function AdminAggregationsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [manualRunning, setManualRunning] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>('ALL');
+  const [runsPage, setRunsPage] = useState(1);
+  const RUNS_PER_PAGE = 5;
 
   const loadRuns = async () => {
     setLoading(true);
@@ -91,6 +93,9 @@ export default function AdminAggregationsPage() {
     if (filterMode === 'MIXED') return run.created > 0 && run.skipped > 0;
     return true;
   });
+
+  const runsTotalPages = Math.max(1, Math.ceil(filteredRuns.length / RUNS_PER_PAGE));
+  const paginatedRuns = filteredRuns.slice((runsPage - 1) * RUNS_PER_PAGE, runsPage * RUNS_PER_PAGE);
 
   return (
     <div className="space-y-8">
@@ -169,7 +174,7 @@ export default function AdminAggregationsPage() {
             ] as Array<[FilterMode, string]>).map(([value, label]) => (
               <button
                 key={value}
-                onClick={() => setFilterMode(value)}
+                onClick={() => { setFilterMode(value); setRunsPage(1); }}
                 className={`px-3 py-2 font-mono text-xs uppercase border-2 transition-colors ${
                   filterMode === value
                     ? 'bg-foreground text-white border-foreground'
@@ -268,6 +273,53 @@ export default function AdminAggregationsPage() {
         loadingLabel="Memuat riwayat"
         empty={!loading && filteredRuns.length === 0}
         emptyMessage="No aggregation runs found."
+        footer={
+          <div className="flex justify-between items-center font-mono text-xs md:text-sm gap-3 flex-col md:flex-row">
+            <div>
+              Menampilkan {filteredRuns.length > 0 ? ((runsPage - 1) * RUNS_PER_PAGE) + 1 : 0}–{Math.min(runsPage * RUNS_PER_PAGE, filteredRuns.length)} dari {filteredRuns.length} data
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setRunsPage((p) => Math.max(1, p - 1))}
+                disabled={runsPage === 1}
+                className="px-3 py-1 border border-border-color bg-white hover:bg-foreground hover:text-white disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-foreground transition-colors uppercase font-bold"
+              >
+                &lt; PREV
+              </button>
+
+              {Array.from({ length: Math.min(3, runsTotalPages) }, (_, i) => {
+                let pageNum = runsPage;
+                if (runsPage === 1) pageNum = i + 1;
+                else if (runsPage === runsTotalPages) pageNum = runsTotalPages - 2 + i;
+                else pageNum = runsPage - 1 + i;
+
+                if (pageNum < 1 || pageNum > runsTotalPages) return null;
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setRunsPage(pageNum)}
+                    className={`px-3 py-1 border font-bold transition-colors ${
+                      pageNum === runsPage
+                        ? 'border-foreground bg-foreground text-white'
+                        : 'border-border-color bg-white hover:bg-foreground hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setRunsPage((p) => Math.min(runsTotalPages, p + 1))}
+                disabled={runsPage === runsTotalPages || runsTotalPages === 0}
+                className="px-3 py-1 border border-border-color bg-white hover:bg-foreground hover:text-white disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-foreground transition-colors uppercase font-bold"
+              >
+                NEXT &gt;
+              </button>
+            </div>
+          </div>
+        }
       >
         <div className="overflow-x-auto min-h-[220px] relative">
           {loading && (
@@ -297,7 +349,7 @@ export default function AdminAggregationsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredRuns.map((r, idx) => (
+                paginatedRuns.map((r, idx) => (
                   <tr
                     key={r.id}
                     className={`border-b border-border-color border-l-4 border-transparent group hover:bg-surface hover:border-foreground transition-colors relative ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}
