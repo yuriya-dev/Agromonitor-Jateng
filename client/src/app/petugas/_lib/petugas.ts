@@ -1,5 +1,6 @@
 import { API_BASE } from '@/lib/api-config';
 
+export type LocationState = {
   latitude: number | null;
   longitude: number | null;
   accuracy: number | null;
