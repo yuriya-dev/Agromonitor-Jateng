@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, IChartApi, LineSeries } from "lightweight-charts";
 import { Info } from "lucide-react";
+import { API_BASE } from "@/lib/api-config";
 
 interface PredictionData {
   time: string;
@@ -46,7 +47,7 @@ export default function PredictionSection({ commodityId, name }: PredictionSecti
     const fetchPrediction = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}/predict?days=${days}`);
+        const res = await fetch(`${API_BASE}/commodities/${commodityId}/predict?days=${days}`);
         const data: PredictionResponse = await res.json();
         
         if (data.success && data.data) {

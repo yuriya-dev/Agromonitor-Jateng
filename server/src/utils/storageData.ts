@@ -378,7 +378,8 @@ export async function getPredictionBySlug(slug: string, days: number, region?: s
 
   // Coba memanggil Python ML-service di port 5002
   try {
-    const url = `http://127.0.0.1:5002/predict?slug=${normalizedSlug}&days=${days}${region ? `&region=${encodeURIComponent(region)}` : ''}`;
+    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://127.0.0.1:5002';
+    const url = `${mlServiceUrl}/predict?slug=${normalizedSlug}&days=${days}${region ? `&region=${encodeURIComponent(region)}` : ''}`;
     const response = await fetch(url);
     if (response.ok) {
       const result = await response.json();

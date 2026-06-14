@@ -21,23 +21,25 @@ export default async function CommodityDetail({ params }: { params: { id: string
   let tickerItems = [];
   
   let predictionData = null;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
   try {
     // Fetch specific commodity
-    const res = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/api/commodities/${commodityId}`, { cache: 'no-store' });
     const data = await res.json();
     if (data.success) {
       commodityData = data.data;
     }
 
     // Fetch all for ticker
-    const allRes = await fetch(`http://127.0.0.1:5001/api/commodities`, { cache: 'no-store' });
+    const allRes = await fetch(`${API_BASE_URL}/api/commodities`, { cache: 'no-store' });
     const allData = await allRes.json();
     if (allData.success) {
       tickerItems = allData.data;
     }
 
     // Fetch prediction for dynamic alerts
-    const predRes = await fetch(`http://127.0.0.1:5001/api/commodities/${commodityId}/predict?days=14`, { cache: 'no-store' });
+    const predRes = await fetch(`${API_BASE_URL}/api/commodities/${commodityId}/predict?days=14`, { cache: 'no-store' });
     const predData = await predRes.json();
     if (predData.success) {
       predictionData = predData.data;
