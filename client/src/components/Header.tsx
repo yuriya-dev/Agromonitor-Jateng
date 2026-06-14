@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Settings, Bell, User, LogOut, ChevronDown, LogIn } from 'lucide-react';
+import { User, LogOut, ChevronDown, LogIn } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
 

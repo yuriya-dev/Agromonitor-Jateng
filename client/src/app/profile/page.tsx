@@ -133,7 +133,7 @@ export default function ProfilePage() {
       } else {
         setMessage({ type: 'error', text: data.message || 'Gagal menyimpan profil' });
       }
-    } catch (e) {
+    } catch {
       setMessage({ type: 'error', text: 'Gagal menghubungi server' });
     } finally {
       setSaving(false);

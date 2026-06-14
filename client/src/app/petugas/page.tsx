@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Calendar, Camera, CheckCircle2, Clock3, Loader2, MapPin, Menu, Navigation, Package, Send, ChevronRight, User2 } from 'lucide-react';
+import { AlertTriangle, Calendar, Camera, CheckCircle2, Clock3, Loader2, LogOut, MapPin, Menu, Navigation, Package, Send, ChevronRight, User2 } from 'lucide-react';
 import { commodityLabels, commodityOptions, compressImageFile, petugasProfile, type LocationState } from './_lib/petugas';
 import { API_BASE } from '@/lib/api-config';
 
