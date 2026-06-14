@@ -10,6 +10,7 @@ import {
   Loader2
 } from "lucide-react";
 import { AdminTableCard } from '@/components/admin/AdminTableCard';
+import { API_BASE } from '@/lib/api-config';
 
 export default function AdminDashboard() {
   type Metrics = {
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
 
   const fetchMetrics = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/admin/metrics');
+      const res = await fetch(`${API_BASE}/admin/metrics`);
       const json = await res.json();
       if (json.success) {
         setMetrics(json.data);
@@ -62,7 +63,7 @@ export default function AdminDashboard() {
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/admin/transactions?page=${page}&limit=5&search=${search}&status=${filterStatus}`);
+      const res = await fetch(`${API_BASE}/admin/transactions?page=${page}&limit=5&search=${search}&status=${filterStatus}`);
       const json = await res.json();
       if (json.success) {
         setTransactions(json.data as TransactionItem[]);

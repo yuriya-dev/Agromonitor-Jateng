@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { API_BASE } from '@/lib/api-config';
 
 export type UserSession = {
   id: string;
@@ -23,7 +24,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const API_BASE = 'http://localhost:5001/api';
 const SESSION_KEY = 'agromonitor_session';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

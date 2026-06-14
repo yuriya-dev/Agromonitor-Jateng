@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UserPlus, Search, Edit2, Trash2, Loader2, X, AlertCircle } from "lucide-react";
 import { AdminTableCard } from '@/components/admin/AdminTableCard';
+import { API_BASE } from '@/lib/api-config';
 
 type UserRole = 'ADMIN' | 'EDITOR' | 'PETUGAS' | 'VIEWER';
 type UserStatus = 'ACTIVE' | 'INACTIVE';
@@ -47,7 +48,7 @@ export default function AdminUsers() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/admin/users?search=${search}`);
+      const res = await fetch(`${API_BASE}/admin/users?search=${search}`);
       const json = await res.json();
       if (json.success) {
         setUsers(json.data as UserItem[]);
@@ -86,7 +87,7 @@ export default function AdminUsers() {
     setFormLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch('http://localhost:5001/api/admin/users', {
+      const res = await fetch(`${API_BASE}/admin/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -116,7 +117,7 @@ export default function AdminUsers() {
     setFormLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`http://localhost:5001/api/admin/users/${selectedUser.fullId}`, {
+      const res = await fetch(`${API_BASE}/admin/users/${selectedUser.fullId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -144,7 +145,7 @@ export default function AdminUsers() {
     setFormLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`http://localhost:5001/api/admin/users/${selectedUser.fullId}`, {
+      const res = await fetch(`${API_BASE}/admin/users/${selectedUser.fullId}`, {
         method: 'DELETE'
       });
       const json = await res.json();

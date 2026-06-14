@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, RefreshCw, User, Bell, LogIn, UserPlus, Save, Loader2, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
+import { API_BASE } from '@/lib/api-config';
 
 type Commodity = {
   id: string;
@@ -55,11 +56,11 @@ export default function ProfilePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const compRes = await fetch('http://localhost:5001/api/commodities');
+      const compRes = await fetch(`${API_BASE}/commodities`);
       const compData = await compRes.json();
       if (compData.success) setCommodities(compData.data);
 
-      const notifRes = await fetch('http://localhost:5001/api/notifications');
+      const notifRes = await fetch(`${API_BASE}/notifications`);
       const notifData = await notifRes.json();
       if (notifData.success) setNotifications(notifData.data);
     } catch (e) {
@@ -75,7 +76,7 @@ export default function ProfilePage() {
 
   const refreshNotifications = async () => {
     try {
-      const notifRes = await fetch('http://localhost:5001/api/notifications');
+      const notifRes = await fetch(`${API_BASE}/notifications`);
       const notifData = await notifRes.json();
       if (notifData.success) setNotifications(notifData.data);
     } catch (e) {
@@ -107,7 +108,7 @@ export default function ProfilePage() {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch('http://localhost:5001/api/profile', {
+      const res = await fetch(`${API_BASE}/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, BarChart3, CheckCircle, Clock3, Database, Layers3 } from 'lucide-react';
+import { API_BASE } from '@/lib/api-config';
 
 type AggregationRun = {
   id: string;
@@ -29,7 +30,7 @@ export default function AggregationRunDetail() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:5001/api/admin/aggregations/${id}`)
+    fetch(`${API_BASE}/admin/aggregations/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (data && data.success) setRun(data.data || null);

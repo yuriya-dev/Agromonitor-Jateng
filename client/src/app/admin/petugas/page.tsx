@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, MapPin, RefreshCw, Search, ShieldAlert, ShieldCheck, XCircle } from 'lucide-react';
 import { AdminTableCard } from '@/components/admin/AdminTableCard';
+import { API_BASE } from '@/lib/api-config';
 
 type ReportStatus = 'SUBMITTED' | 'REVIEWED' | 'APPROVED' | 'REJECTED';
 
@@ -43,7 +44,7 @@ export default function AdminPetugasPage() {
       if (filterStatus && filterStatus !== 'SEMUA') query.set('status', filterStatus);
       query.set('limit', '50');
 
-      const res = await fetch(`http://localhost:5001/api/admin/field-reports?${query.toString()}`);
+      const res = await fetch(`${API_BASE}/admin/field-reports?${query.toString()}`);
       const json = await res.json();
       if (json.success) {
         setReports(json.data);
@@ -65,7 +66,7 @@ export default function AdminPetugasPage() {
   const updateStatus = async (reportId: string, status: ReportStatus) => {
     setActionLoading(reportId);
     try {
-      const res = await fetch(`http://localhost:5001/api/admin/field-reports/${reportId}`, {
+      const res = await fetch(`${API_BASE}/admin/field-reports/${reportId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),

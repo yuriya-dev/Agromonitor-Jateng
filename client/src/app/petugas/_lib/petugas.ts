@@ -1,4 +1,5 @@
-export type LocationState = {
+import { API_BASE } from '@/lib/api-config';
+
   latitude: number | null;
   longitude: number | null;
   accuracy: number | null;
@@ -89,12 +90,12 @@ export const compressImageFile = (file: File) =>
   });
 
 export const loadSurveyHistory = async (petugasCode: string) => {
-  const response = await fetch(`http://localhost:5001/api/admin/field-reports?search=${encodeURIComponent(petugasCode)}&limit=12`);
+  const response = await fetch(`${API_BASE}/admin/field-reports?search=${encodeURIComponent(petugasCode)}&limit=12`);
   const contentType = response.headers.get('content-type') || '';
   const responseText = await response.text();
 
   if (!contentType.includes('application/json')) {
-    throw new Error(`Server mengembalikan respons non-JSON (${response.status}). Pastikan backend http://localhost:5001 berjalan.`);
+    throw new Error(`Server mengembalikan respons non-JSON (${response.status}). Pastikan backend berjalan.`);
   }
 
   const json = JSON.parse(responseText) as { success?: boolean; data?: FieldReportApiItem[]; message?: string };

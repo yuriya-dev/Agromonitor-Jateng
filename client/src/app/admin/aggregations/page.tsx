@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, ChevronRight, BarChart3, Clock3, Database, Layers3, PlayCircle, Search } from 'lucide-react';
 import { AdminTableCard } from '@/components/admin/AdminTableCard';
+import { API_BASE } from '@/lib/api-config';
 
 type AggregationRun = {
   id: string;
@@ -42,7 +43,7 @@ export default function AdminAggregationsPage() {
   const loadRuns = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5001/api/admin/aggregations');
+      const res = await fetch(`${API_BASE}/admin/aggregations`);
       const data = await res.json();
       if (data && data.success) setRuns(data.data || []);
     } catch (e) {
@@ -70,7 +71,7 @@ export default function AdminAggregationsPage() {
   const handleRunManual = async () => {
     setManualRunning(true);
     try {
-      const response = await fetch('http://localhost:5001/api/admin/field-reports/aggregate', {
+      const response = await fetch(`${API_BASE}/admin/field-reports/aggregate`, {
         method: 'POST',
       });
 

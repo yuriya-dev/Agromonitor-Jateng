@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Calendar, Camera, CheckCircle2, Clock3, Loader2, LogOut, MapPin, Menu, Navigation, Package, Send, ChevronRight, User2 } from 'lucide-react';
 import { commodityLabels, commodityOptions, compressImageFile, petugasProfile, type LocationState } from './_lib/petugas';
+import { API_BASE } from '@/lib/api-config';
 
 export default function PetugasLapanganPage() {
   const petugasCode = petugasProfile.code;
@@ -120,7 +121,7 @@ export default function PetugasLapanganPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:5001/api/field-reports', {
+      const response = await fetch(`${API_BASE}/field-reports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -145,7 +146,7 @@ export default function PetugasLapanganPage() {
       const responseText = await response.text();
 
       if (!contentType.includes('application/json')) {
-        throw new Error(`Server mengembalikan respons non-JSON (${response.status}). Pastikan backend http://localhost:5001 berjalan.`);
+        throw new Error(`Server mengembalikan respons non-JSON (${response.status}). Pastikan backend berjalan.`);
       }
 
       const json = JSON.parse(responseText);
