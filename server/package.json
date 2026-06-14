@@ -6,6 +6,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
+    "postinstall": "prisma generate",
     "import:sp2k": "ts-node scripts/importFromSP2K.ts",
     "import:csv": "ts-node scripts/importFromCsv.ts"
   },
