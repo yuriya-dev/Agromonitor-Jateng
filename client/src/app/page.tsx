@@ -1,7 +1,5 @@
-import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import CommodityCard from "@/components/CommodityCard";
-import { Settings, Bell, User } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import MapFilter from "@/components/MapFilter";
 import RegionDateFilter from "@/components/RegionDateFilter";
@@ -31,7 +29,8 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
     }
 
     // Gunakan URL absolute karena ini dijalankan di server
-    const res = await fetch(`http://127.0.0.1:5001/api/commodities${apiQuery.toString() ? `?${apiQuery.toString()}` : ''}`, {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const res = await fetch(`${API_BASE_URL}/api/commodities${apiQuery.toString() ? `?${apiQuery.toString()}` : ''}`, {
       cache: 'no-store' // selalu ambil data terbaru
     });
     const data = await res.json();
