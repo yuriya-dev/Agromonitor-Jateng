@@ -347,6 +347,7 @@ export default function PetugasLapanganPage() {
               </div>
               {photoUrl && (
                 <div className="border-2 border-border-color bg-white p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photoUrl} alt="Pratinjau bukti" className="w-full h-40 object-cover" />
                 </div>
               )}

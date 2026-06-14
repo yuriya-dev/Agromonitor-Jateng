@@ -318,6 +318,7 @@ export default function AdminPetugasPage() {
                   <div className="text-xs uppercase text-accent-grey mb-2 font-mono">Foto Bukti</div>
                   {selectedReport.photoUrl ? (
                     <a href={selectedReport.photoUrl} target="_blank" rel="noreferrer" className="block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={selectedReport.photoUrl}
                         alt={`Bukti laporan ${selectedReport.petugasCode}`}

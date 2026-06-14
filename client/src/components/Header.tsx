@@ -6,7 +6,7 @@ import { User, LogOut, ChevronDown, LogIn } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
 
-export default function Header({ commodities }: { commodities?: any[] }) {
+export default function Header() {
   const { user, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
