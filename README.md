@@ -100,10 +100,10 @@ Gunakan akun berikut untuk masuk ke portal autentikasi (`/login`) sesuai dengan 
 
 | Peran (Role) | Halaman / Portal | Email | Kata Sandi | Deskripsi |
 |---|---|---|---|---|
-| **ADMIN** | `/admin` | `budi@admin.com` | `hashed_password` | Manajemen data, kelola transaksi, dan manajemen pengguna |
-| **ANALIS (EDITOR)** | `/analis` | `siti@admin.com` | `hashed_password` | Analisis ML ARIMA, akurasi model, dan ekspor data CSV/JSON |
-| **PETUGAS** | `/petugas` | `petugas@agromonitor.local` | `hashed_password` | Pengiriman laporan harga lapangan dengan koordinat GPS |
-| **VIEWER** | `/` (Beranda Publik) | `andi@admin.com` | `hashed_password` | Pengguna publik untuk pemantauan umum |
+| **ADMIN** | `/admin` | `budi_admin@agromonitor.com` | `123456` | Manajemen data, kelola transaksi, dan manajemen pengguna |
+| **ANALIS (EDITOR)** | `/analis` | `siti_analis@agromonitor.com` | `123456` | Analisis ML ARIMA, akurasi model, dan ekspor data CSV/JSON |
+| **PETUGAS** | `/petugas` | `rudi_petugas@agromonitor.com` | `123456` | Pengiriman laporan harga lapangan dengan koordinat GPS |
+| **VIEWER** | `/` (Beranda Publik) | `andi@gmail.com` | `123456` | Pengguna publik untuk pemantauan umum |
 
 ---
 *Dokumentasi lebih detail tersedia pada file `project_dokumentation.md`.*

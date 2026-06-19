@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import "dotenv/config";
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -64,12 +65,13 @@ async function main() {
   // Seed Users if none exist
   const existingUsers = await prisma.user.count();
   if (existingUsers === 0) {
+    const hashedPassword = await bcrypt.hash('123456', 10);
     const users = [
-      { name: "Budi Santoso", email: "budi@admin.com", password: "hashed_password", role: "ADMIN", status: "ACTIVE", lastLogin: new Date("2024-05-17T08:30:00Z") },
-      { name: "Siti Rahma", email: "siti@admin.com", password: "hashed_password", role: "EDITOR", status: "ACTIVE", lastLogin: new Date("2024-05-17T07:15:00Z") },
-      { name: "Slamet Riyadi", email: "petugas@agromonitor.local", password: "hashed_password", role: "PETUGAS", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:45:00Z") },
-      { name: "Andi Wijaya", email: "andi@admin.com", password: "hashed_password", role: "VIEWER", status: "INACTIVE", lastLogin: new Date("2024-05-15T16:45:00Z") },
-      { name: "Dewi Lestari", email: "dewi@admin.com", password: "hashed_password", role: "VIEWER", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:20:00Z") },
+      { name: "Budi Santoso", email: "budi_admin@agromonitor.com", password: hashedPassword, role: "ADMIN", status: "ACTIVE", lastLogin: new Date("2024-05-17T08:30:00Z") },
+      { name: "Siti Rahma", email: "siti_analis@agromonitor.com", password: hashedPassword, role: "EDITOR", status: "ACTIVE", lastLogin: new Date("2024-05-17T07:15:00Z") },
+      { name: "Rudi Petugas", email: "rudi_petugas@agromonitor.com", password: hashedPassword, role: "PETUGAS", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:45:00Z") },
+      { name: "Andi Wijaya", email: "andi@gmail.com", password: hashedPassword, role: "VIEWER", status: "INACTIVE", lastLogin: new Date("2024-05-15T16:45:00Z") },
+      { name: "Dewi Lestari", email: "dewi@admin.com", password: hashedPassword, role: "VIEWER", status: "ACTIVE", lastLogin: new Date("2024-05-17T06:20:00Z") },
     ];
     
     // We have to cast role to any because the enum in seed.ts might not match directly if Prisma client wasn't regenerated, but it should be fine.
@@ -89,14 +91,14 @@ async function main() {
 
     const existingFieldReports = await prisma.fieldReport.count();
     if (existingFieldReports === 0) {
-      const petugas = await prisma.user.findUnique({ where: { email: 'petugas@agromonitor.local' } });
+      const petugas = await prisma.user.findUnique({ where: { email: 'rudi_petugas@agromonitor.com' } });
 
       await prisma.fieldReport.create({
         data: {
           reporterId: petugas?.id,
           petugasCode: 'PTG-194',
-          petugasName: 'Slamet Riyadi',
-          petugasEmail: 'petugas@agromonitor.local',
+          petugasName: 'Rudi Petugas',
+          petugasEmail: 'rudi_petugas@agromonitor.com',
           commoditySlug: 'beras-medium',
           commodityName: 'Beras Medium (Kg)',
           market: 'Pasar Johar, Semarang',
