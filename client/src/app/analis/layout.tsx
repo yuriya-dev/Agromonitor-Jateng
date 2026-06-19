@@ -1,20 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { 
   BarChart2, 
   Settings, 
   FileText
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AnalisLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'EDITOR')) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   const isActive = (path: string) => {
     if (path === "/analis" && pathname !== "/analis") return false;
     return pathname.startsWith(path);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-foreground"></div>
+        <p className="font-mono text-sm uppercase text-accent-grey mt-4">Memverifikasi Otoritas Akses...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'EDITOR') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-surface flex text-foreground font-sans">
@@ -71,8 +94,9 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
         
         <div className="p-6 border-t-2 border-border-color">
           <div className="text-xs font-mono font-bold uppercase">Role Akses:</div>
-          <div className="flex items-center mt-2 text-foreground font-mono text-sm font-bold">
-            DATA_SCIENTIST
+          <div className="flex flex-col mt-2 text-foreground font-mono text-xs font-bold gap-1 truncate">
+            <span className="uppercase text-accent-green">DATA_SCIENTIST</span>
+            <span className="text-[10px] text-accent-grey truncate">{user?.name || user?.email}</span>
           </div>
         </div>
       </aside>
@@ -90,9 +114,12 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
             <Link href="/analis/laporan" className="bg-foreground text-background font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-accent-green hover:shadow-brutal transition-all active:translate-y-1 active:shadow-none">
               Generate Report
             </Link>
-            <Link href="/login" className="border-2 border-border-color bg-surface text-foreground font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-white transition-colors shadow-brutal active:translate-y-1 active:shadow-none">
+            <button 
+              onClick={() => { logout(); router.push('/login'); }}
+              className="border-2 border-border-color bg-surface text-foreground font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-white transition-colors shadow-brutal active:translate-y-1 active:shadow-none cursor-pointer"
+            >
               Logout
-            </Link>
+            </button>
           </div>
         </header>
 

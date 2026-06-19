@@ -1,16 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Database, Settings, Users, ClipboardList, BarChart3 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'ADMIN')) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname !== "/admin") return false;
     return pathname.startsWith(path);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-foreground"></div>
+        <p className="font-mono text-sm uppercase text-accent-grey mt-4">Memverifikasi Otoritas Akses...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'ADMIN') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-surface flex text-foreground font-sans">
@@ -108,9 +131,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </h2>
           <div className="flex items-center space-x-4">
             <div className="text-sm font-mono border-2 border-border-color px-3 py-1 bg-surface">
-              ADMIN_ROOT
+              {user?.name || user?.email || "ADMIN_ROOT"}
             </div>
-            <button className="bg-foreground text-background font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-accent-red transition-colors shadow-brutal active:translate-y-1 active:shadow-none">
+            <button 
+              onClick={() => { logout(); router.push('/login'); }}
+              className="bg-foreground text-background font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-accent-red transition-colors shadow-brutal active:translate-y-1 active:shadow-none cursor-pointer"
+            >
               Logout
             </button>
           </div>

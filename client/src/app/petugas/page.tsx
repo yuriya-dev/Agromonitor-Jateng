@@ -1,15 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Calendar, Camera, CheckCircle2, Clock3, Loader2, LogOut, MapPin, Menu, Navigation, Package, Send, ChevronRight, User2 } from 'lucide-react';
-import { commodityLabels, commodityOptions, compressImageFile, petugasProfile, type LocationState } from './_lib/petugas';
+import { commodityLabels, commodityOptions, compressImageFile, type LocationState } from './_lib/petugas';
 import { API_BASE } from '@/lib/api-config';
+import { useAuth } from '@/context/AuthContext';
 
 export default function PetugasLapanganPage() {
-  const petugasCode = petugasProfile.code;
-  const petugasName = petugasProfile.name;
-  const petugasEmail = petugasProfile.email;
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const petugasCode = user?.email === 'petugas@agromonitor.local' ? 'PTG-194' : `PTG-${user?.id?.substring(0, 3).toUpperCase() || '194'}`;
+  const petugasName = user?.name || 'Slamet Riyadi';
+  const petugasEmail = user?.email || 'petugas@agromonitor.local';
   const [reportDate, setReportDate] = useState('');
   const [commoditySlug, setCommoditySlug] = useState('beras-medium');
   const [market, setMarket] = useState('Pasar Johar, Semarang');
@@ -213,12 +218,15 @@ export default function PetugasLapanganPage() {
                     </span>
                     <ChevronRight size={16} />
                   </Link>
-                  <Link href="/login" className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors">
+                  <button 
+                    onClick={() => { logout(); router.push('/login'); }}
+                    className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors cursor-pointer"
+                  >
                     <span className="text-sm font-bold uppercase flex items-center gap-2">
                       <LogOut size={14} /> Keluar
                     </span>
                     <ChevronRight size={16} />
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}
