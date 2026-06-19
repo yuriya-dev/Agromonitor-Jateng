@@ -38,6 +38,40 @@ const STORAGE_DIR = path.resolve(__dirname, '../../../storage');
 const CSV_FILES = fs.existsSync(STORAGE_DIR)
   ? fs.readdirSync(STORAGE_DIR).filter((fileName) => fileName.endsWith('.csv'))
   : [];
+const CONFIG_PATH = path.join(STORAGE_DIR, 'arima_config.json');
+
+export function getStorageTotalDataPoints(): number {
+  let count = 0;
+  for (const fileName of CSV_FILES) {
+    const filePath = path.join(STORAGE_DIR, fileName);
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const lines = content.trim().split(/\r?\n/);
+      if (lines.length > 1) {
+        count += (lines.length - 1);
+      }
+    }
+  }
+  return count;
+}
+
+export function getArimaConfig(slug: string) {
+  let p = 5, d = 1, q = 0, confidence = 95;
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+      if (config[slug]) {
+        p = config[slug].p ?? p;
+        d = config[slug].d ?? d;
+        q = config[slug].q ?? q;
+        confidence = config[slug].confidence ?? confidence;
+      }
+    } catch (e) {
+      console.error('Failed to read arima_config.json in TS', e);
+    }
+  }
+  return { p, d, q, confidence };
+}
 
 let cachedRows: StorageRow[] | null = null;
 
@@ -408,16 +442,17 @@ export async function getPredictionBySlug(slug: string, days: number, region?: s
   // Fallback ke metode TS bawaan (regresi linier) jika microservice offline/error
   const history = toCommodityHistory(normalizedSlug, rows);
   const prediction = buildPrediction(rows, days);
+  const { p: order_p, d: order_d, q: order_q, confidence: conf_level } = getArimaConfig(normalizedSlug);
 
   return {
     commodityId: normalizedSlug,
     commodityName: history.name,
     unit: history.unit,
-    modelUsed: 'ARIMA-like trend baseline on storage data',
+    modelUsed: `ARIMA-like (${order_p},${order_d},${order_q}) trend baseline`,
     metrics: {
       mape: prediction.metrics.mape,
       rmse: prediction.metrics.rmse,
-      confidenceLevel: '95%',
+      confidenceLevel: `${conf_level}%`,
     },
     forecast: prediction.forecast,
     trendDirection: prediction.trendDirection,

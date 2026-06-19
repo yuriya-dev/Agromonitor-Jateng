@@ -72,7 +72,8 @@ Buka terminal baru, masuk ke direktori `ml-service`, instal pustaka dependensi P
 ```bash
 cd ml-service
 pip install fastapi uvicorn statsmodels pandas numpy scikit-learn
-python3 -m uvicorn app:app --port 5002
+# Gunakan python di Windows atau python3 di Linux/macOS
+python -m uvicorn app:app --port 5002
 ```
 ML-Service akan berjalan di [http://localhost:5002](http://localhost:5002).
 

@@ -24,6 +24,26 @@ app.add_middleware(
 )
 
 STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../storage"))
+CONFIG_PATH = os.path.join(STORAGE_DIR, "arima_config.json")
+
+def get_arima_order(slug: str):
+    # Default parameters
+    p, d, q = 5, 1, 0
+    confidence = 95
+    if os.path.exists(CONFIG_PATH):
+        try:
+            import json
+            with open(CONFIG_PATH, 'r') as f:
+                config = json.load(f)
+                if slug in config:
+                    c = config[slug]
+                    p = int(c.get('p', 5))
+                    d = int(c.get('d', 1))
+                    q = int(c.get('q', 0))
+                    confidence = int(c.get('confidence', 95))
+        except Exception as e:
+            print(f"Gagal membaca arima_config.json: {e}")
+    return p, d, q, confidence
 
 def slugify(value: str) -> str:
     value = value.lower()
@@ -51,7 +71,11 @@ def read_root():
 def predict_commodity(
     slug: str = Query(..., description="Slug komoditas, misal: beras-medium"),
     days: int = Query(14, description="Jumlah hari ramalan ke depan"),
-    region: str = Query(None, description="Wilayah kabupaten/kota opsional")
+    region: str = Query(None, description="Wilayah kabupaten/kota opsional"),
+    p: int = Query(None, description="Auto-Regressive parameter (p)"),
+    d: int = Query(None, description="Integrated parameter (d)"),
+    q: int = Query(None, description="Moving Average parameter (q)"),
+    confidence: int = Query(None, description="Confidence interval percentage")
 ):
     try:
         csv_files = glob.glob(os.path.join(STORAGE_DIR, "harga_pokok_jateng_*.csv"))
@@ -114,15 +138,22 @@ def predict_commodity(
             )
 
         # Fit ARIMA model
-        # Default order (5, 1, 0). If it fails or is not compatible due to small dataset, fallback to (1, 1, 0)
+        cfg_p, cfg_d, cfg_q, cfg_conf = get_arima_order(slug)
+        order_p = p if p is not None else cfg_p
+        order_d = d if d is not None else cfg_d
+        order_q = q if q is not None else cfg_q
+        conf_level = confidence if confidence is not None else cfg_conf
+        alpha = 1.0 - (conf_level / 100.0)
+
         try:
-            model = ARIMA(df_daily['Price'], order=(5, 1, 0))
+            model = ARIMA(df_daily['Price'], order=(order_p, order_d, order_q))
             fitted_model = model.fit()
         except Exception as e_arima:
-            print(f"Gagal melatih ARIMA(5,1,0), mencoba ARIMA(1,1,0): {e_arima}")
+            print(f"Gagal melatih ARIMA({order_p},{order_d},{order_q}), mencoba ARIMA(1,1,0): {e_arima}")
             try:
                 model = ARIMA(df_daily['Price'], order=(1, 1, 0))
                 fitted_model = model.fit()
+                order_p, order_d, order_q = 1, 1, 0
             except Exception as e_fallback:
                 raise HTTPException(status_code=500, detail=f"Gagal fitting model ARIMA: {e_fallback}")
 
@@ -143,7 +174,7 @@ def predict_commodity(
         # Perform forecasting
         forecast_result = fitted_model.get_forecast(steps=days)
         forecast_mean = forecast_result.predicted_mean
-        conf_int = forecast_result.conf_int(alpha=0.05)
+        conf_int = forecast_result.conf_int(alpha=alpha)
 
         # Create forecast timeline
         future_dates = pd.date_range(start=df_daily.index[-1] + pd.Timedelta(days=1), periods=days)
@@ -201,24 +232,24 @@ def predict_commodity(
         # Buat dynamic_note Bahasa Indonesia yang formal dan informatif
         if trend_direction == "UP":
             dynamic_note = (
-                f"Berdasarkan analisis model ARIMA, harga {commodity_name} diprediksi mengalami tren {trend_desc} "
+                f"Berdasarkan analisis model ARIMA({order_p},{order_d},{order_q}), harga {commodity_name} diprediksi mengalami tren {trend_desc} "
                 f"sebesar {price_change_percent:.2f}% dalam {days} hari ke depan (dari Rp {last_historical_price:,.0f} "
                 f"menjadi Rp {final_forecasted_price:,.0f}). Volatilitas peramalan dinilai {volatility.lower()} "
-                f"dengan interval kepercayaan 95%. Harap waspada terhadap potensi kenaikan harga di pasar."
+                f"dengan interval kepercayaan {conf_level}%. Harap waspada terhadap potensi kenaikan harga di pasar."
             )
         elif trend_direction == "DOWN":
             dynamic_note = (
-                f"Berdasarkan analisis model ARIMA, harga {commodity_name} diprediksi mengalami tren {trend_desc} "
+                f"Berdasarkan analisis model ARIMA({order_p},{order_d},{order_q}), harga {commodity_name} diprediksi mengalami tren {trend_desc} "
                 f"sebesar {abs(price_change_percent):.2f}% dalam {days} hari ke depan (dari Rp {last_historical_price:,.0f} "
                 f"menjadi Rp {final_forecasted_price:,.0f}). Volatilitas peramalan dinilai {volatility.lower()} "
-                f"dengan interval kepercayaan 95%. Penurunan ini mengindikasikan pasokan komoditas yang melimpah."
+                f"dengan interval kepercayaan {conf_level}%. Penurunan ini mengindikasikan pasokan komoditas yang melimpah."
             )
         else:
             dynamic_note = (
-                f"Berdasarkan analisis model ARIMA, harga {commodity_name} diprediksi relatif {trend_desc} "
+                f"Berdasarkan analisis model ARIMA({order_p},{order_d},{order_q}), harga {commodity_name} diprediksi relatif {trend_desc} "
                 f"dengan proyeksi perubahan {price_change_percent:+.2f}% dalam {days} hari ke depan (dari Rp {last_historical_price:,.0f} "
                 f"menjadi Rp {final_forecasted_price:,.0f}). Volatilitas peramalan dinilai {volatility.lower()} "
-                f"dengan interval kepercayaan 95%, menunjukkan kondisi pasar yang kondusif."
+                f"dengan interval kepercayaan {conf_level}%, menunjukkan kondisi pasar yang kondusif."
             )
 
         return {
@@ -227,11 +258,11 @@ def predict_commodity(
                 "commodityId": slug,
                 "commodityName": commodity_name,
                 "unit": unit,
-                "modelUsed": "ARIMA (5,1,0) via Python ML-Service",
+                "modelUsed": f"ARIMA ({order_p},{order_d},{order_q}) via Python ML-Service",
                 "metrics": {
                     "mape": round(mape, 2),
                     "rmse": round(rmse, 2),
-                    "confidenceLevel": "95%"
+                    "confidenceLevel": f"{conf_level}%"
                 },
                 "forecast": forecast_list,
                 "trendDirection": trend_direction,

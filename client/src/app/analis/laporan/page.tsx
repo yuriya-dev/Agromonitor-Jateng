@@ -1,10 +1,49 @@
 "use client";
 
 import { Download, FileText, Database, Sliders, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api-config";
 
 export default function AnalisLaporan() {
-  const [dateRange, setDateRange] = useState({ start: "2024-05-01", end: "2024-05-17" });
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+
+  useEffect(() => {
+    // Set default tanggal: 1 bulan terakhir sampai hari ini
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    setDateRange({
+      start: formatDate(oneMonthAgo),
+      end: formatDate(today)
+    });
+  }, []);
+
+  const handleExportCsv = () => {
+    if (!dateRange.start || !dateRange.end) return;
+    const url = `${API_BASE}/analis/export/csv?start=${dateRange.start}&end=${dateRange.end}`;
+    window.open(url, "_blank");
+  };
+
+  const handleExportJson = () => {
+    if (!dateRange.start || !dateRange.end) return;
+    const url = `${API_BASE}/analis/export/json?start=${dateRange.start}&end=${dateRange.end}`;
+    window.open(url, "_blank");
+  };
+
+  const handlePrintPdf = () => {
+    if (!dateRange.start || !dateRange.end) return;
+    // Buka halaman cetak laporan di tab baru
+    const url = `/analis/laporan/print?start=${dateRange.start}&end=${dateRange.end}`;
+    window.open(url, "_blank");
+  };
 
   return (
     <>
@@ -18,7 +57,7 @@ export default function AnalisLaporan() {
       <div className="bg-white border-2 border-border-color shadow-brutal flex flex-col mb-8">
         <div className="p-4 border-b-2 border-border-color bg-surface flex items-center">
           <Calendar size={20} className="mr-2" />
-          <h3 className="font-bold uppercase tracking-tight text-lg">Periode Data</h3>
+          <h3 className="font-bold uppercase tracking-tight text-lg">Periode Data Laporan</h3>
         </div>
         <div className="p-6 flex flex-wrap gap-6 items-end">
           <div className="flex-1 min-w-[200px]">
@@ -27,7 +66,7 @@ export default function AnalisLaporan() {
               type="date" 
               value={dateRange.start}
               onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-              className="w-full border-2 border-border-color p-3 font-mono text-sm outline-none focus:border-foreground transition-colors" 
+              className="w-full border-2 border-border-color p-3 font-mono text-sm outline-none focus:border-foreground transition-colors bg-white font-bold" 
             />
           </div>
           <div className="flex-1 min-w-[200px]">
@@ -36,47 +75,65 @@ export default function AnalisLaporan() {
               type="date" 
               value={dateRange.end}
               onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-              className="w-full border-2 border-border-color p-3 font-mono text-sm outline-none focus:border-foreground transition-colors" 
+              className="w-full border-2 border-border-color p-3 font-mono text-sm outline-none focus:border-foreground transition-colors bg-white font-bold" 
             />
           </div>
-          <button className="bg-surface border-2 border-border-color px-6 py-3 font-mono text-sm font-bold uppercase hover:border-foreground transition-colors">
-            Terapkan Filter
-          </button>
+          <div className="text-xs font-mono text-accent-grey uppercase max-w-xs shrink-0 self-center">
+            Pilih rentang tanggal historis komoditas yang ingin diekspor dari database dan file storage.
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* PDF Card */}
         <div className="bg-white border-2 border-border-color flex flex-col items-center text-center hover:border-accent-red hover:-translate-y-2 hover:shadow-brutal transition-all group p-8">
           <div className="w-16 h-16 bg-red-50 border-2 border-accent-red flex items-center justify-center rounded-full mb-6 group-hover:bg-accent-red transition-colors">
             <FileText size={32} className="text-accent-red group-hover:text-white transition-colors" />
           </div>
-          <h4 className="font-bold uppercase text-lg mb-2 group-hover:text-accent-red transition-colors">Laporan PDF</h4>
-          <p className="text-xs font-mono text-accent-grey mb-8 flex-1">Full Executive Summary Report berisi visualisasi harga, tren ARIMA, dan output akhir SPK SAW.</p>
-          <button className="w-full bg-white text-accent-red border-2 border-accent-red font-mono font-bold uppercase py-3 flex justify-center items-center group-hover:bg-accent-red group-hover:text-white transition-colors">
+          <h4 className="font-bold uppercase text-lg mb-2 group-hover:text-accent-red transition-colors">Laporan PDF Resmi</h4>
+          <p className="text-xs font-mono text-accent-grey mb-8 flex-1">
+            Ringkasan Eksekutif Resmi berisi visualisasi harga, akurasi model ARIMA, indikator peringatan bahaya, dan analisis tren dalam format siap cetak.
+          </p>
+          <button 
+            onClick={handlePrintPdf}
+            className="w-full bg-white text-accent-red border-2 border-accent-red font-mono font-bold uppercase py-3 flex justify-center items-center group-hover:bg-accent-red group-hover:text-white transition-colors shadow-brutal active:translate-y-0.5"
+          >
             <Download size={18} className="mr-2" />
-            Unduh (.pdf)
+            Cetak / PDF
           </button>
         </div>
         
+        {/* CSV Card */}
         <div className="bg-white border-2 border-border-color flex flex-col items-center text-center hover:border-accent-green hover:-translate-y-2 hover:shadow-brutal transition-all group p-8">
           <div className="w-16 h-16 bg-green-50 border-2 border-accent-green flex items-center justify-center rounded-full mb-6 group-hover:bg-accent-green transition-colors">
             <Database size={32} className="text-accent-green group-hover:text-white transition-colors" />
           </div>
           <h4 className="font-bold uppercase text-lg mb-2 group-hover:text-accent-green transition-colors">Raw Dataset CSV</h4>
-          <p className="text-xs font-mono text-accent-grey mb-8 flex-1">Dataset historis harga komoditas dalam rentang waktu yang dipilih untuk keperluan olah data eksternal.</p>
-          <button className="w-full bg-white text-accent-green border-2 border-accent-green font-mono font-bold uppercase py-3 flex justify-center items-center group-hover:bg-accent-green group-hover:text-white transition-colors">
+          <p className="text-xs font-mono text-accent-grey mb-8 flex-1">
+            Dataset historis gabungan harga komoditas (DB & CSV) dalam rentang waktu yang dipilih untuk kebutuhan pemodelan atau olah data eksternal.
+          </p>
+          <button 
+            onClick={handleExportCsv}
+            className="w-full bg-white text-accent-green border-2 border-accent-green font-mono font-bold uppercase py-3 flex justify-center items-center group-hover:bg-accent-green group-hover:text-white transition-colors shadow-brutal active:translate-y-0.5"
+          >
             <Download size={18} className="mr-2" />
             Unduh (.csv)
           </button>
         </div>
 
+        {/* JSON Card */}
         <div className="bg-white border-2 border-border-color flex flex-col items-center text-center hover:border-foreground hover:-translate-y-2 hover:shadow-brutal transition-all group p-8">
           <div className="w-16 h-16 bg-gray-100 border-2 border-foreground flex items-center justify-center rounded-full mb-6 group-hover:bg-foreground transition-colors">
             <Sliders size={32} className="text-foreground group-hover:text-white transition-colors" />
           </div>
           <h4 className="font-bold uppercase text-lg mb-2 group-hover:text-foreground transition-colors">Hasil Prediksi JSON</h4>
-          <p className="text-xs font-mono text-accent-grey mb-8 flex-1">Output raw format JSON dari model ARIMA (termasuk nilai p,d,q) dan kalkulasi matriks SPK SAW.</p>
-          <button className="w-full bg-white text-foreground border-2 border-foreground font-mono font-bold uppercase py-3 flex justify-center items-center group-hover:bg-foreground group-hover:text-white transition-colors">
+          <p className="text-xs font-mono text-accent-grey mb-8 flex-1">
+            Output mentah berformat JSON dari model ARIMA (termasuk metrik MAPE, RMSE, dan proyeksi nilai 14 hari kedepan) serta dataset historis lengkap.
+          </p>
+          <button 
+            onClick={handleExportJson}
+            className="w-full bg-white text-foreground border-2 border-foreground font-mono font-bold uppercase py-3 flex justify-center items-center group-hover:bg-foreground group-hover:text-white transition-colors shadow-brutal active:translate-y-0.5"
+          >
             <Download size={18} className="mr-2" />
             Unduh (.json)
           </button>

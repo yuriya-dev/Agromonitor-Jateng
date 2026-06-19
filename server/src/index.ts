@@ -9,6 +9,7 @@ import adminRoutes from './routes/adminRoutes';
 import fieldReportRoutes from './routes/fieldReportRoutes';
 import profileRoutes from './routes/profileRoutes';
 import authRoutes from './routes/authRoutes';
+import analisRoutes from './routes/analisRoutes';
 import { aggregateApprovedFieldReports } from './controllers/fieldReportController';
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/field-reports', fieldReportRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/analis', analisRoutes);
 
 // Basic Route
 app.get('/', (req: Request, res: Response) => {
