@@ -30,6 +30,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'system' | 'viewer'>('system');
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -210,9 +211,33 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {/* Tab Selector */}
+      <div className="flex border-b-2 border-border-color mb-6 gap-2">
+        <button
+          onClick={() => setActiveTab('system')}
+          className={`px-6 py-3 font-mono font-bold text-sm uppercase border-2 border-b-0 border-border-color transition-all duration-150 cursor-pointer ${
+            activeTab === 'system'
+              ? 'bg-foreground text-background translate-y-[2px]'
+              : 'bg-white hover:bg-surface text-accent-grey hover:text-foreground'
+          }`}
+        >
+          Staf & Petugas ({users.filter(u => u.role !== 'VIEWER').length})
+        </button>
+        <button
+          onClick={() => setActiveTab('viewer')}
+          className={`px-6 py-3 font-mono font-bold text-sm uppercase border-2 border-b-0 border-border-color transition-all duration-150 cursor-pointer ${
+            activeTab === 'viewer'
+              ? 'bg-foreground text-background translate-y-[2px]'
+              : 'bg-white hover:bg-surface text-accent-grey hover:text-foreground'
+          }`}
+        >
+          Pengamat Publik / Viewer ({users.filter(u => u.role === 'VIEWER').length})
+        </button>
+      </div>
+
       <AdminTableCard
-        title="Manajemen Pengguna & Akses"
-        description="Atur role, status, dan data login pengguna sistem."
+        title={activeTab === 'system' ? 'Manajemen Staf & Petugas Sistem' : 'Manajemen Pengamat Publik (Viewer)'}
+        description={activeTab === 'system' ? 'Atur role, status, dan data login untuk Admin, Analis, dan Petugas.' : 'Atur status dan data login untuk pengguna publik/viewer.'}
         actions={
           <div className="flex border-2 border-border-color bg-white px-3 py-1.5 items-center w-full sm:w-[280px]">
             <Search size={16} className="text-accent-grey mr-2 shrink-0" />
@@ -248,53 +273,55 @@ export default function AdminUsers() {
               </tr>
             </thead>
             <tbody className="font-mono text-sm">
-              {users.length === 0 && !loading ? (
+              {users.filter(u => activeTab === 'system' ? u.role !== 'VIEWER' : u.role === 'VIEWER').length === 0 && !loading ? (
                  <tr>
                    <td colSpan={6} className="p-8 text-center text-accent-grey">Tidak ada pengguna yang ditemukan.</td>
                  </tr>
               ) : (
-                users.map((user, idx) => (
-                  <tr 
-                    key={user.id} 
-                    className={`border-b border-border-color border-l-4 border-transparent group hover:bg-surface hover:border-foreground transition-colors relative ${
-                      idx % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
-                    }`}
-                  >
-                    <td className="p-3 font-bold align-top break-words">{user.id}</td>
-                    <td className="p-3 font-bold align-top break-words">{user.name}</td>
-                    <td className="p-3 align-top">
-                      <span className={`inline-block px-2 py-1 text-xs font-bold border ${
-                        user.role === "ADMIN" ? "bg-red-100 border-accent-red text-accent-red" :
-                        user.role === "EDITOR" ? "bg-green-100 border-accent-green text-accent-green" :
-                        user.role === "PETUGAS" ? "bg-blue-100 border-blue-600 text-blue-700" :
-                        "bg-gray-100 border-foreground text-foreground"
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="p-3 align-top">
-                      <span className={`flex items-center text-xs font-bold ${user.status === "ACTIVE" ? "text-accent-green" : "text-accent-grey"}`}>
-                        <div className={`w-2 h-2 rounded-full mr-2 ${user.status === "ACTIVE" ? "bg-accent-green" : "bg-accent-grey"}`}></div>
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-accent-grey align-top whitespace-nowrap">{user.lastLogin}</td>
-                    <td className="p-3 text-right align-top whitespace-nowrap">
-                      <div className="flex justify-end space-x-2">
-                      <button 
-                        onClick={() => openEditModal(user)}
-                        className="p-2 border-2 border-border-color hover:border-foreground hover:bg-foreground hover:text-white transition-colors" title="Edit Pengguna">
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => openDeleteModal(user)}
-                        className="p-2 border-2 border-border-color hover:border-accent-red hover:bg-accent-red hover:text-white transition-colors text-accent-red" title="Hapus Pengguna">
-                        <Trash2 size={16} />
-                      </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                users
+                  .filter(u => activeTab === 'system' ? u.role !== 'VIEWER' : u.role === 'VIEWER')
+                  .map((user, idx) => (
+                    <tr 
+                      key={user.id} 
+                      className={`border-b border-border-color border-l-4 border-transparent group hover:bg-surface hover:border-foreground transition-colors relative ${
+                        idx % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
+                      }`}
+                    >
+                      <td className="p-3 font-bold align-top break-words">{user.id}</td>
+                      <td className="p-3 font-bold align-top break-words">{user.name}</td>
+                      <td className="p-3 align-top">
+                        <span className={`inline-block px-2 py-1 text-xs font-bold border ${
+                          user.role === "ADMIN" ? "bg-red-100 border-accent-red text-accent-red" :
+                          user.role === "EDITOR" ? "bg-green-100 border-accent-green text-accent-green" :
+                          user.role === "PETUGAS" ? "bg-blue-100 border-blue-600 text-blue-700" :
+                          "bg-gray-100 border-foreground text-foreground"
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="p-3 align-top">
+                        <span className={`flex items-center text-xs font-bold ${user.status === "ACTIVE" ? "text-accent-green" : "text-accent-grey"}`}>
+                          <div className={`w-2 h-2 rounded-full mr-2 ${user.status === "ACTIVE" ? "bg-accent-green" : "bg-accent-grey"}`}></div>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-accent-grey align-top whitespace-nowrap">{user.lastLogin}</td>
+                      <td className="p-3 text-right align-top whitespace-nowrap">
+                        <div className="flex justify-end space-x-2">
+                        <button 
+                          onClick={() => openEditModal(user)}
+                          className="p-2 border-2 border-border-color hover:border-foreground hover:bg-foreground hover:text-white transition-colors cursor-pointer" title="Edit Pengguna">
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => openDeleteModal(user)}
+                          className="p-2 border-2 border-border-color hover:border-accent-red hover:bg-accent-red hover:text-white transition-colors text-accent-red cursor-pointer" title="Hapus Pengguna">
+                          <Trash2 size={16} />
+                        </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
