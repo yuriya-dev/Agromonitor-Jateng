@@ -94,5 +94,16 @@ Proyek ini mengadopsi tema UI **Clinical Precision / Daylight Assassin Mode**:
 - **Aksen Tajam**: Penggunaan warna *Solid Blood Red* (`#D32F2F`) untuk indikator penurunan/peringatan kritis, dan *Laser Green* (`#00E676`) untuk kenaikan/keadaan aman.
 - **Neo-Brutalism**: Elemen kartu bersudut kaku (0px *border radius*) dan *hard-shadow* untuk kesan taktikal.
 
+## 🔑 Akun Kredensial Uji Coba (Login Portal)
+
+Gunakan akun berikut untuk masuk ke portal autentikasi (`/login`) sesuai dengan peran masing-masing:
+
+| Peran (Role) | Halaman / Portal | Email | Kata Sandi | Deskripsi |
+|---|---|---|---|---|
+| **ADMIN** | `/admin` | `budi@admin.com` | `hashed_password` | Manajemen data, kelola transaksi, dan manajemen pengguna |
+| **ANALIS (EDITOR)** | `/analis` | `siti@admin.com` | `hashed_password` | Analisis ML ARIMA, akurasi model, dan ekspor data CSV/JSON |
+| **PETUGAS** | `/petugas` | `petugas@agromonitor.local` | `hashed_password` | Pengiriman laporan harga lapangan dengan koordinat GPS |
+| **VIEWER** | `/` (Beranda Publik) | `andi@admin.com` | `hashed_password` | Pengguna publik untuk pemantauan umum |
+
 ---
 *Dokumentasi lebih detail tersedia pada file `project_dokumentation.md`.*

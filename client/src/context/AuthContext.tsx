@@ -16,7 +16,7 @@ export type UserSession = {
 type AuthContextType = {
   user: UserSession | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: UserSession }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   updateUser: (data: Partial<UserSession>) => void;
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.success) {
         saveSession(data.data);
-        return { success: true, message: data.message };
+        return { success: true, message: data.message, user: data.data };
       } else {
         return { success: false, message: data.message || 'Login gagal' };
       }

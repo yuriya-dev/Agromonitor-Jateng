@@ -1,7 +1,55 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowLeft, Lock, User, AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { ArrowLeft, Lock, User, AlertTriangle, RefreshCw } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError("Email dan password wajib diisi.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await login(email, password);
+      if (res.success && res.user) {
+        const role = res.user.role;
+        // Redirect berdasarkan role akses
+        if (role === "ADMIN") {
+          router.push("/admin");
+        } else if (role === "EDITOR") {
+          router.push("/analis");
+        } else if (role === "PETUGAS") {
+          router.push("/petugas");
+        } else {
+          router.push("/");
+        }
+      } else {
+        setError(res.message || "Email atau password salah.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError("Terjadi kesalahan koneksi dengan server.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-surface flex flex-col justify-center items-center p-6 font-sans">
       <Link href="/" className="absolute top-8 left-8 flex items-center hover:bg-white p-2 border border-transparent hover:border-border-color transition-colors shadow-none hover:shadow-brutal text-sm font-mono font-bold uppercase">
@@ -25,11 +73,17 @@ export default function LoginPage() {
           <div className="bg-yellow-100 border border-yellow-500 p-3 flex items-start mb-6">
             <AlertTriangle size={18} className="text-yellow-700 mr-3 mt-0.5 flex-shrink-0" />
             <p className="text-xs font-mono text-yellow-800 uppercase font-bold">
-              Area Terbatas. Halaman ini khusus untuk Admin dan Petugas Lapangan yang terdaftar.
+              Area Terbatas. Halaman ini khusus untuk Admin, Analis, dan Petugas Lapangan.
             </p>
           </div>
 
-          <form className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-accent-red p-3 mb-6 font-mono text-xs text-accent-red uppercase font-bold">
+              ⚠️ Login gagal: {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-accent-grey">
                 ID Pengguna / Email
@@ -39,8 +93,11 @@ export default function LoginPage() {
                   <User size={18} className="text-accent-grey" />
                 </div>
                 <input 
-                  type="text" 
-                  placeholder="Masukkan ID Pengguna"
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Masukkan Email Pengguna"
+                  required
                   className="w-full border-2 border-border-color bg-surface p-3 pl-10 font-mono text-sm outline-none focus:border-foreground focus:bg-white transition-colors"
                 />
               </div>
@@ -56,7 +113,10 @@ export default function LoginPage() {
                 </div>
                 <input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  required
                   className="w-full border-2 border-border-color bg-surface p-3 pl-10 font-mono text-sm outline-none focus:border-foreground focus:bg-white transition-colors"
                 />
               </div>
@@ -72,9 +132,17 @@ export default function LoginPage() {
               </a>
             </div>
 
-            <Link href="/admin" className="block w-full text-center bg-foreground text-background font-mono font-bold uppercase py-4 hover:bg-accent-red hover:shadow-brutal transition-all active:translate-y-1 active:shadow-none border-2 border-transparent">
-              AUTHORIZE & LOGIN
-            </Link>
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className="w-full text-center bg-foreground text-background font-mono font-bold uppercase py-4 hover:bg-accent-red hover:shadow-brutal transition-all active:translate-y-1 active:shadow-none border-2 border-transparent flex justify-center items-center cursor-pointer"
+            >
+              {submitting ? (
+                <><RefreshCw className="animate-spin mr-2" size={18} /> Verifying...</>
+              ) : (
+                "AUTHORIZE & LOGIN"
+              )}
+            </button>
           </form>
         </div>
         
