@@ -87,9 +87,9 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
             {pathname === "/analis/laporan" && "Ekspor Laporan Analitik"}
           </h2>
           <div className="flex items-center space-x-4">
-            <button className="bg-foreground text-background font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-accent-green hover:shadow-brutal transition-all active:translate-y-1 active:shadow-none">
+            <Link href="/analis/laporan" className="bg-foreground text-background font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-accent-green hover:shadow-brutal transition-all active:translate-y-1 active:shadow-none">
               Generate Report
-            </button>
+            </Link>
             <Link href="/login" className="border-2 border-border-color bg-surface text-foreground font-mono font-bold uppercase px-4 py-2 text-sm hover:bg-white transition-colors shadow-brutal active:translate-y-1 active:shadow-none">
               Logout
             </Link>
