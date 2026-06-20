@@ -126,13 +126,23 @@ export default async function CommodityDetail({
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="max-w-7xl mx-auto">
+          {commodityData?.isFallback && (
+            <div className="bg-yellow-50 border-2 border-yellow-500 text-yellow-900 p-4 mb-6 font-mono text-sm shadow-brutal flex items-center space-x-3">
+              <span className="text-xl">⚠️</span>
+              <span>
+                <strong>Pemberitahuan:</strong> Data harga untuk komoditas ini tidak tersedia di wilayah <strong>{pasar?.toUpperCase()}</strong>. Sistem secara otomatis menampilkan data rata-rata Jawa Tengah sebagai alternatif.
+              </span>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Left Column: Info & Stats */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white border-2 border-border-color p-6 shadow-brutal relative">
               <div className="text-xs font-mono text-accent-grey mb-2 uppercase tracking-widest border-b border-border-color pb-2">
-                ID: {commodityId.toUpperCase()} • PASAR: {pasar ? pasar.toUpperCase() : "RATA-RATA JATENG"}
+                ID: {commodityId.toUpperCase()} • PASAR: {pasar ? (commodityData?.isFallback ? `${pasar.toUpperCase()} (FALLBACK KE JATENG)` : pasar.toUpperCase()) : "RATA-RATA JATENG"}
               </div>
               <h2 className="text-4xl font-bold uppercase tracking-tight mt-4">{name}</h2>
               
@@ -229,6 +239,7 @@ export default async function CommodityDetail({
           
         </div>
       </div>
-    </main>
+    </div>
+  </main>
   );
 }

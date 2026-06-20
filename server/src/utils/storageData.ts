@@ -244,14 +244,54 @@ function resolveUnit(rows: StorageRow[]): string {
   return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? 'kg';
 }
 
-function toCommoditySummary(slug: string, rows: StorageRow[]): CommoditySummary {
+function toCommoditySummary(slug: string, rows: StorageRow[], dateFilter?: string): CommoditySummary {
   const byDate = groupByDate(rows);
   const dates = [...byDate.keys()];
-  const latestDate = dates[dates.length - 1];
-  const previousDate = dates[dates.length - 2] ?? latestDate;
+  if (dates.length === 0) {
+    return {
+      id: slug,
+      name: slug,
+      unit: 'kg',
+      price: 0,
+      changeAmount: 0,
+      changePercent: 0
+    };
+  }
 
-  const latestAverage = average((byDate.get(latestDate) ?? []).map((row) => row.harga));
-  const previousAverage = average((byDate.get(previousDate) ?? []).map((row) => row.harga));
+  const latestDateStr = dates[dates.length - 1];
+  const latestAverage = average((byDate.get(latestDateStr) ?? []).map((row) => row.harga));
+
+  let previousDateStr = dates[dates.length - 2] ?? latestDateStr;
+
+  if (dateFilter === '1-minggu') {
+    const latestDate = new Date(latestDateStr);
+    const targetDate = new Date(latestDate);
+    targetDate.setDate(targetDate.getDate() - 7);
+    const closestDateStr = dates.reduce((best, d) => {
+      const dDate = new Date(d);
+      if (dDate > latestDate) return best;
+      const bestDate = new Date(best);
+      return Math.abs(dDate.getTime() - targetDate.getTime()) < Math.abs(bestDate.getTime() - targetDate.getTime()) ? d : best;
+    }, dates[0]);
+    previousDateStr = closestDateStr;
+  } else if (dateFilter === '1-bulan') {
+    const latestDate = new Date(latestDateStr);
+    const targetDate = new Date(latestDate);
+    targetDate.setDate(targetDate.getDate() - 30);
+    const closestDateStr = dates.reduce((best, d) => {
+      const dDate = new Date(d);
+      if (dDate > latestDate) return best;
+      const bestDate = new Date(best);
+      return Math.abs(dDate.getTime() - targetDate.getTime()) < Math.abs(bestDate.getTime() - targetDate.getTime()) ? d : best;
+    }, dates[0]);
+    previousDateStr = closestDateStr;
+  }
+
+  if (previousDateStr === latestDateStr && dates.length > 1) {
+    previousDateStr = dates[dates.length - 2];
+  }
+
+  const previousAverage = average((byDate.get(previousDateStr) ?? []).map((row) => row.harga));
   const changeAmount = latestAverage - previousAverage;
   const changePercent = previousAverage === 0 ? 0 : (changeAmount / previousAverage) * 100;
 
@@ -414,12 +454,14 @@ function buildPrediction(rows: StorageRow[], days: number) {
 }
 
 export function getAllCommoditySummaries(region?: string, dateFilter?: string): CommoditySummary[] {
-  const rows = filterRows(loadRows(), region, dateFilter, true);
+  // Muat semua baris berdasarkan region, tetapi tanpa filter tanggal di sini agar
+  // kita memiliki akses ke histori harga lengkap untuk membandingkan harga sebelumnya.
+  const rows = filterRows(loadRows(), region, undefined, false);
   const grouped = groupByCommodity(rows);
 
   return [...grouped.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([slug, commodityRows]) => toCommoditySummary(slug, commodityRows));
+    .map(([slug, commodityRows]) => toCommoditySummary(slug, commodityRows, dateFilter));
 }
 
 export function getCommodityHistoryBySlug(slug: string, region?: string, dateFilter?: string): CommodityHistory | null {

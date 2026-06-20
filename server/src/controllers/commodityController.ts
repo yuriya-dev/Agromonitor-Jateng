@@ -23,7 +23,13 @@ export const getCommodityBySlug = async (req: Request, res: Response) => {
     const slug = req.params.slug as string;
     const region = typeof req.query.pasar === 'string' ? req.query.pasar : undefined;
     const date = typeof req.query.date === 'string' ? req.query.date : undefined;
-    const commodity = getCommodityHistoryBySlug(slug, region, date);
+    let commodity = getCommodityHistoryBySlug(slug, region, date);
+    let isFallback = false;
+
+    if (!commodity && region) {
+      commodity = getCommodityHistoryBySlug(slug, undefined, date);
+      isFallback = true;
+    }
 
     if (!commodity) {
       return res.status(404).json({ success: false, message: 'Komoditas tidak ditemukan' });
@@ -35,7 +41,8 @@ export const getCommodityBySlug = async (req: Request, res: Response) => {
         id: commodity.id,
         name: commodity.name,
         unit: commodity.unit,
-        prices: commodity.prices
+        prices: commodity.prices,
+        isFallback
       }
     });
   } catch (error) {
@@ -51,7 +58,13 @@ export const getCommodityPrediction = async (req: Request, res: Response) => {
     const region = typeof req.query.pasar === 'string' ? req.query.pasar : undefined;
     const days = parseInt(req.query.days as string) || 14; // Default 14 hari
 
-    const prediction = await getPredictionBySlug(slug, days, region);
+    let prediction = await getPredictionBySlug(slug, days, region);
+    let isFallback = false;
+
+    if (!prediction && region) {
+      prediction = await getPredictionBySlug(slug, days, undefined);
+      isFallback = true;
+    }
 
     if (!prediction) {
       return res.status(404).json({ success: false, message: 'Data tidak cukup untuk melakukan prediksi' });
@@ -70,6 +83,7 @@ export const getCommodityPrediction = async (req: Request, res: Response) => {
         volatility: prediction.volatility,
         alertTrigger: prediction.alertTrigger,
         dynamicNote: prediction.dynamicNote,
+        isFallback
       }
     });
 
