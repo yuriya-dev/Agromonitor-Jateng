@@ -14,8 +14,16 @@ interface ChartDataPoint {
   close: number;
 }
 
-export default async function CommodityDetail({ params }: { params: { id: string } }) {
+export default async function CommodityDetail({
+  params,
+  searchParams
+}: {
+  params: { id: string };
+  searchParams: { pasar?: string; date?: string };
+}) {
   const commodityId = params.id;
+  const pasar = searchParams.pasar;
+  const date = searchParams.date;
   
   let commodityData = null;
   let tickerItems = [];
@@ -24,8 +32,13 @@ export default async function CommodityDetail({ params }: { params: { id: string
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
   try {
-    // Fetch specific commodity
-    const res = await fetch(`${API_BASE_URL}/api/commodities/${commodityId}`, { cache: 'no-store' });
+    const apiQuery = new URLSearchParams();
+    if (pasar) apiQuery.set('pasar', pasar);
+    if (date) apiQuery.set('date', date);
+    const queryString = apiQuery.toString() ? `?${apiQuery.toString()}` : '';
+
+    // Fetch specific commodity with market/date query params
+    const res = await fetch(`${API_BASE_URL}/api/commodities/${commodityId}${queryString}`, { cache: 'no-store' });
     const data = await res.json();
     if (data.success) {
       commodityData = data.data;
@@ -38,8 +51,8 @@ export default async function CommodityDetail({ params }: { params: { id: string
       tickerItems = allData.data;
     }
 
-    // Fetch prediction for dynamic alerts
-    const predRes = await fetch(`${API_BASE_URL}/api/commodities/${commodityId}/predict?days=14`, { cache: 'no-store' });
+    // Fetch prediction for dynamic alerts with market query param
+    const predRes = await fetch(`${API_BASE_URL}/api/commodities/${commodityId}/predict?days=14${pasar ? `&pasar=${encodeURIComponent(pasar)}` : ''}`, { cache: 'no-store' });
     const predData = await predRes.json();
     if (predData.success) {
       predictionData = predData.data;
@@ -89,7 +102,7 @@ export default async function CommodityDetail({ params }: { params: { id: string
       <header className="bg-background border-b-2 border-border-color sticky top-0 z-50">
         <div className="px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
+            <Link href={pasar || date ? `/?${new URLSearchParams({ ...(pasar && { pasar }), ...(date && { date }) }).toString()}` : "/"} className="hover:bg-surface p-2 border border-transparent hover:border-border-color transition-colors">
               <ArrowLeft size={20} />
             </Link>
             <h1 className="text-xl font-bold tracking-tight uppercase flex items-center">
@@ -119,7 +132,7 @@ export default async function CommodityDetail({ params }: { params: { id: string
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white border-2 border-border-color p-6 shadow-brutal relative">
               <div className="text-xs font-mono text-accent-grey mb-2 uppercase tracking-widest border-b border-border-color pb-2">
-                ID: {commodityId.toUpperCase()} • PASAR: RATA-RATA JATENG
+                ID: {commodityId.toUpperCase()} • PASAR: {pasar ? pasar.toUpperCase() : "RATA-RATA JATENG"}
               </div>
               <h2 className="text-4xl font-bold uppercase tracking-tight mt-4">{name}</h2>
               
@@ -211,7 +224,7 @@ export default async function CommodityDetail({ params }: { params: { id: string
           <div className="lg:col-span-2 space-y-6">
             <CandlestickChart data={chartData} />
             
-            <PredictionSection commodityId={commodityId} name={name} />
+            <PredictionSection commodityId={commodityId} name={name} pasar={pasar} />
           </div>
           
         </div>

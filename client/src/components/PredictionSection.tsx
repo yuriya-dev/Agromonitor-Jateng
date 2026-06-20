@@ -33,9 +33,10 @@ interface PredictionResponse {
 interface PredictionSectionProps {
   commodityId: string;
   name: string;
+  pasar?: string;
 }
 
-export default function PredictionSection({ commodityId, name }: PredictionSectionProps) {
+export default function PredictionSection({ commodityId, name, pasar }: PredictionSectionProps) {
   const [days, setDays] = useState<number>(14);
   const [loading, setLoading] = useState<boolean>(true);
   const [prediction, setPrediction] = useState<PredictionResponse["data"] | null>(null);
@@ -47,7 +48,12 @@ export default function PredictionSection({ commodityId, name }: PredictionSecti
     const fetchPrediction = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/commodities/${commodityId}/predict?days=${days}`);
+        const queryParams = new URLSearchParams();
+        queryParams.set("days", days.toString());
+        if (pasar) {
+          queryParams.set("pasar", pasar);
+        }
+        const res = await fetch(`${API_BASE}/commodities/${commodityId}/predict?${queryParams.toString()}`);
         const data: PredictionResponse = await res.json();
         
         if (data.success && data.data) {
@@ -61,7 +67,7 @@ export default function PredictionSection({ commodityId, name }: PredictionSecti
     };
 
     fetchPrediction();
-  }, [commodityId, days]);
+  }, [commodityId, days, pasar]);
 
   useEffect(() => {
     if (!chartContainerRef.current || !prediction || prediction.forecast.length === 0) return;

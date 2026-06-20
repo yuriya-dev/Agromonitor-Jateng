@@ -8,14 +8,21 @@ interface CommodityCardProps {
   changeAmount: number;
   changePercent: number;
   unit: string;
+  pasar?: string;
+  date?: string;
 }
 
-export default function CommodityCard({ id, name, price, changeAmount, changePercent, unit }: CommodityCardProps) {
+export default function CommodityCard({ id, name, price, changeAmount, changePercent, unit, pasar, date }: CommodityCardProps) {
   const isUp = changeAmount > 0;
   const isDown = changeAmount < 0;
 
+  const queryParams = new URLSearchParams();
+  if (pasar) queryParams.set("pasar", pasar);
+  if (date) queryParams.set("date", date);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
   return (
-    <Link href={`/komoditas/${id}`} className="block">
+    <Link href={`/komoditas/${id}${queryString}`} className="block">
       <div className="bg-white border-2 border-border-color shadow-brutal hover:shadow-brutal-hover hover:translate-y-[2px] hover:translate-x-[2px] transition-all duration-150 p-4 flex flex-col justify-between group cursor-pointer relative h-full">
       <div className="flex justify-between items-start mb-4">
         <h3 className="font-sans font-bold text-lg uppercase tracking-tight">{name}</h3>

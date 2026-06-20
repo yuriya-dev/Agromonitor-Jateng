@@ -109,6 +109,8 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
                     changeAmount={commodity.changeAmount}
                     changePercent={commodity.changePercent}
                     unit={commodity.unit}
+                    pasar={searchParams.pasar}
+                    date={searchParams.date}
                   />
                 ))
               ) : (
