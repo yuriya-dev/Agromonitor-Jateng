@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,70 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Model untuk komoditas (misalnya: Beras Medium, Gula Pasir)
 model Commodity {
   id          String   @id @default(uuid())
   slug        String   @unique
   name        String
-  unit        String   // KG, LITER, dll
+  unit        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   prices      Price[]
 }
 
-// Model untuk harga komoditas historis (Time-Series)
 model Price {
   id          String    @id @default(uuid())
   commodityId String
-  commodity   Commodity @relation(fields: [commodityId], references: [id])
   price       Float
   date        DateTime  @default(now())
-  market      String    @default("Rata-rata Jawa Tengah") // Bisa spesifik per pasar/kabupaten
+  market      String    @default("Rata-rata Jawa Tengah")
   status      String    @default("VALID")
   source      String    @default("Petugas Lapangan")
   createdAt   DateTime  @default(now())
+  commodity   Commodity @relation(fields: [commodityId], references: [id])
 
   @@index([commodityId, date])
 }
 
-// Model untuk Admin / Pengguna Sistem
 model User {
-  id                   String         @id @default(uuid())
-  email                String         @unique
+  id                   String        @id @default(uuid())
+  email                String        @unique
   name                 String?
-  password             String         @default("public")
-  role                 Role           @default(VIEWER)
-  status               String         @default("ACTIVE")
+  password             String        @default("public")
+  role                 Role          @default(VIEWER)
+  status               String        @default("ACTIVE")
   lastLogin            DateTime?
-  fieldReports         FieldReport[]  @relation("FieldReportReporter")
-  reviewedFieldReports FieldReport[]  @relation("FieldReportReviewer")
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  whatsapp             String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  notifyDaily          Boolean       @default(false)
   preferences          String?
-  notifyDaily          Boolean        @default(false)
+  whatsapp             String?
+  fieldReports         FieldReport[] @relation("FieldReportReporter")
+  reviewedFieldReports FieldReport[] @relation("FieldReportReviewer")
 }
 
-enum Role {
-  ADMIN
-  EDITOR
-  PETUGAS
-  VIEWER
-}
-
-enum FieldReportStatus {
-  SUBMITTED
-  REVIEWED
-  APPROVED
-  REJECTED
-}
-
-// Laporan tugas lapangan yang dikirim petugas dengan koordinat GPS
 model FieldReport {
-  id             String             @id @default(uuid())
+  id             String            @id @default(uuid())
   reporterId     String?
-  reporter       User?              @relation("FieldReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
   petugasCode    String
   petugasName    String
   petugasEmail   String?
@@ -93,16 +68,16 @@ model FieldReport {
   photoUrl       String?
   status         FieldReportStatus @default(SUBMITTED)
   reviewedById   String?
-  reviewedByUser User?             @relation("FieldReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt     DateTime?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+  reporter       User?             @relation("FieldReportReporter", fields: [reporterId], references: [id])
+  reviewedByUser User?             @relation("FieldReportReviewer", fields: [reviewedById], references: [id])
 
   @@index([petugasCode, reportDate])
   @@index([status, createdAt])
 }
 
-// Record of aggregation runs (daily or manual) for auditing
 model AggregationRun {
   id        String   @id @default(uuid())
   runAt     DateTime @default(now())
@@ -112,4 +87,18 @@ model AggregationRun {
   skipped   Int
   details   Json?
   createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  PETUGAS
+  VIEWER
+}
+
+enum FieldReportStatus {
+  SUBMITTED
+  REVIEWED
+  APPROVED
+  REJECTED
 }
