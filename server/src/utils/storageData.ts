@@ -83,6 +83,10 @@ function slugify(value: string): string {
 }
 
 function parseDate(value: string): Date {
+  if (value.includes('-')) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  }
   const [day, month, year] = value.split('/').map(Number);
   return new Date(Date.UTC(year, month - 1, day));
 }
@@ -100,7 +104,7 @@ function parseCsvLine(line: string): string[] {
   return line.split(',').map((entry) => entry.trim());
 }
 
-function loadRows(): StorageRow[] {
+export function loadRows(): StorageRow[] {
   if (cachedRows) {
     return cachedRows;
   }
@@ -108,11 +112,32 @@ function loadRows(): StorageRow[] {
   const rows: StorageRow[] = [];
 
   for (const fileName of CSV_FILES) {
+    if (fileName.startsWith('.')) {
+      continue;
+    }
     const filePath = path.join(STORAGE_DIR, fileName);
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      continue;
+    }
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.trim().split(/\r?\n/);
 
     if (lines.length <= 1) {
+      continue;
+    }
+
+    const headerLine = lines[0];
+    const headers = parseCsvLine(headerLine).map((h) => h.toLowerCase());
+
+    const idxTanggal = headers.findIndex((h) => h === 'tanggal' || h === 'tanggal_awal');
+    const idxHarga = headers.findIndex((h) => h === 'harga' || h === 'harga_tanggal_awal');
+    const idxKomoditas = headers.findIndex((h) => h === 'komoditas');
+    const idxUnit = headers.findIndex((h) => h === 'unit');
+    const idxProvinsi = headers.findIndex((h) => h === 'provinsi');
+    const idxKabupaten = headers.findIndex((h) => h === 'kabupaten_kota' || h === 'kabupatenkota');
+
+    if (idxTanggal === -1 || idxHarga === -1 || idxKomoditas === -1 || idxProvinsi === -1 || idxKabupaten === -1) {
+      console.warn(`File CSV ${fileName} tidak memiliki kolom wajib yang diperlukan. Melewati file ini.`);
       continue;
     }
 
@@ -121,15 +146,25 @@ function loadRows(): StorageRow[] {
         continue;
       }
 
-      const [provinsi, kabupatenKota, komoditas, unit, tanggalAwal, hargaAwal] = parseCsvLine(line);
+      const columns = parseCsvLine(line);
+      if (columns.length < headers.length) {
+        continue;
+      }
+
+      const tanggalVal = columns[idxTanggal];
+      const hargaVal = columns[idxHarga];
+      const komoditas = columns[idxKomoditas];
+      const unit = idxUnit !== -1 ? columns[idxUnit] : 'kg';
+      const provinsi = columns[idxProvinsi];
+      const kabupatenKota = columns[idxKabupaten];
 
       rows.push({
         provinsi,
         kabupatenKota,
         komoditas,
         unit,
-        tanggal: parseDate(tanggalAwal),
-        harga: Number(hargaAwal) || 0,
+        tanggal: parseDate(tanggalVal),
+        harga: Number(hargaVal) || 0,
       });
     }
   }

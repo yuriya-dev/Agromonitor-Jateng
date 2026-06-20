@@ -5,7 +5,8 @@ import path from 'path';
 import {
   getAllCommoditySummaries,
   getPredictionBySlug,
-  getStorageTotalDataPoints
+  getStorageTotalDataPoints,
+  loadRows
 } from '../utils/storageData';
 
 const prisma = new PrismaClient();
@@ -212,47 +213,19 @@ const getCombinedHistoricalData = async (startDateStr: string, endDateStr: strin
     sumber: p.source
   }));
 
-  // 2. Fetch data dari CSV storage (menggunakan loadRows secara lokal)
-  // Untuk menghindari duplikasi/ketergantungan pemuatan, kita import loadRows secara dinamis atau panggil manual.
-  // Karena loadRows ada di storageData.ts tapi tidak diexport, kita bisa baca CSV di sini atau export loadRows dari storageData.
-  // Tapi untuk kepraktisan, kita bisa import dan filter rows dari CSV.
-  // Mari kita import loadRows dengan memodifikasi storageData.ts atau load di sini.
-  // Wait, let's load rows by reading the CSV files directly.
-  const rows: any[] = [];
-  const files = fs.existsSync(STORAGE_DIR)
-    ? fs.readdirSync(STORAGE_DIR).filter((f) => f.endsWith('.csv'))
-    : [];
-
-  for (const fileName of files) {
-    const filePath = path.join(STORAGE_DIR, fileName);
-    const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.trim().split(/\r?\n/);
-    if (lines.length <= 1) continue;
-
-    for (const line of lines.slice(1)) {
-      if (!line.trim()) continue;
-      const parts = line.split(',').map((entry) => entry.trim());
-      if (parts.length < 6) continue;
-
-      const [provinsi, kabupatenKota, komoditas, unit, tanggalAwalStr, hargaAwalStr] = parts;
-      
-      // Parse tanggal format DD/MM/YYYY
-      const [day, month, year] = tanggalAwalStr.split('/').map(Number);
-      const date = new Date(Date.UTC(year, month - 1, day));
-
-      if (date >= startDate && date <= endDate) {
-        rows.push({
-          tanggal: date,
-          provinsi,
-          kabupatenKota,
-          komoditas,
-          satuan: unit,
-          harga: Number(hargaAwalStr) || 0,
-          sumber: 'BPS / Kemendag (CSV)'
-        });
-      }
-    }
-  }
+  // 2. Fetch data dari CSV storage (menggunakan loadRows yang diimport)
+  const csvRows = loadRows();
+  const rows = csvRows
+    .filter((row) => row.tanggal >= startDate && row.tanggal <= endDate)
+    .map((row) => ({
+      tanggal: row.tanggal,
+      provinsi: row.provinsi,
+      kabupatenKota: row.kabupatenKota,
+      komoditas: row.komoditas,
+      satuan: row.unit,
+      harga: row.harga,
+      sumber: 'BPS / Kemendag (CSV)'
+    }));
 
   // Gabungkan dan urutkan berdasarkan tanggal
   const combined = [...dbRows, ...rows];

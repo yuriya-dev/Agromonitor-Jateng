@@ -60,11 +60,12 @@ def normalize_text(value: str) -> str:
 
 @app.get("/")
 def read_root():
+    files = glob.glob(os.path.join(STORAGE_DIR, "*.csv"))
     return {
         "status": "online",
         "service": "Agromonitor ARIMA Forecasting ML Service",
         "storage_path": STORAGE_DIR,
-        "available_csv_files": [os.path.basename(f) for f in glob.glob(os.path.join(STORAGE_DIR, "harga_pokok_jateng_*.csv"))]
+        "available_csv_files": [os.path.basename(f) for f in files if not os.path.basename(f).startswith('.')]
     }
 
 @app.get("/predict")
@@ -78,7 +79,12 @@ def predict_commodity(
     confidence: int = Query(None, description="Confidence interval percentage")
 ):
     try:
-        csv_files = glob.glob(os.path.join(STORAGE_DIR, "harga_pokok_jateng_*.csv"))
+        target_file = os.path.join(STORAGE_DIR, "data_harga_pangan.csv")
+        if os.path.exists(target_file):
+            csv_files = [target_file]
+        else:
+            csv_files = glob.glob(os.path.join(STORAGE_DIR, "*.csv"))
+
         if not csv_files:
             raise HTTPException(status_code=500, detail="Tidak ada file data CSV ditemukan di folder storage.")
 
@@ -87,6 +93,16 @@ def predict_commodity(
         for file in csv_files:
             try:
                 temp_df = pd.read_csv(file)
+                # Map columns dynamically to support different schemas
+                rename_map = {
+                    'tanggal': 'tanggal_awal',
+                    'harga': 'harga_tanggal_awal',
+                    'kabupaten_kota': 'kabupaten_kota'
+                }
+                for col in temp_df.columns:
+                    col_lower = col.lower()
+                    if col_lower in rename_map:
+                        temp_df.rename(columns={col: rename_map[col_lower]}, inplace=True)
                 df_list.append(temp_df)
             except Exception as e:
                 print(f"Gagal membaca file {file}: {e}")
@@ -95,7 +111,18 @@ def predict_commodity(
             raise HTTPException(status_code=500, detail="Gagal membaca data dari file CSV.")
 
         raw_df = pd.concat(df_list, ignore_index=True)
-        raw_df['tanggal_awal'] = pd.to_datetime(raw_df['tanggal_awal'], format='%d/%m/%Y')
+
+        # Parse date dynamically
+        def parse_date(val):
+            try:
+                if '-' in str(val):
+                    return pd.to_datetime(val, format='%Y-%m-%d')
+                else:
+                    return pd.to_datetime(val, format='%d/%m/%Y')
+            except:
+                return pd.to_datetime(val, errors='coerce')
+
+        raw_df['tanggal_awal'] = raw_df['tanggal_awal'].apply(parse_date)
 
         # Filter by slug matching the commodity name
         raw_df['slug'] = raw_df['komoditas'].apply(slugify)

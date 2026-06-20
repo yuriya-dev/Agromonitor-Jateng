@@ -137,3 +137,5 @@ ml-service/*.pyo
 ml-service/*.pyd
 
 @script
+
+storage/
