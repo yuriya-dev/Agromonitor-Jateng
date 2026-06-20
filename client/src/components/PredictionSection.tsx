@@ -125,7 +125,21 @@ export default function PredictionSection({ commodityId, name, pasar }: Predicti
 
     chart.timeScale().fitContent();
 
-    // Handle Resize
+    // Use ResizeObserver to handle element resizing (e.g. initial layout, grid changes)
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        if (width > 0) {
+          chart.applyOptions({ width });
+        }
+      }
+    });
+
+    if (chartContainerRef.current) {
+      resizeObserver.observe(chartContainerRef.current);
+    }
+
+    // Handle Resize (window event fallback)
     const handleResize = () => {
       if (chartContainerRef.current) {
         chart.applyOptions({ width: chartContainerRef.current.clientWidth });
@@ -136,6 +150,7 @@ export default function PredictionSection({ commodityId, name, pasar }: Predicti
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      resizeObserver.disconnect();
       chart.remove();
     };
   }, [prediction]);

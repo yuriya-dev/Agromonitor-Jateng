@@ -87,6 +87,54 @@ export default async function CommodityDetail({
   const isUp = changeAmount > 0;
   const isDown = changeAmount < 0;
 
+  // Calculate dynamic stats
+  let high52W = 0;
+  let low52W = 0;
+  let avg30D = 0;
+  let volatilityText = "Rendah";
+
+  if (chartData.length > 0) {
+    const latestDate = new Date(chartData[chartData.length - 1].time);
+    
+    // 52 Weeks High & Low (364 days limit from latest date)
+    const cutoff52W = new Date(latestDate);
+    cutoff52W.setDate(cutoff52W.getDate() - 364);
+    
+    const prices52W = chartData.filter(d => new Date(d.time) >= cutoff52W);
+    const activePrices52W = prices52W.length > 0 ? prices52W : chartData;
+    
+    high52W = Math.max(...activePrices52W.map(d => d.high));
+    low52W = Math.min(...activePrices52W.map(d => d.low));
+
+    // 30 Days Average (30 days limit from latest date)
+    const cutoff30D = new Date(latestDate);
+    cutoff30D.setDate(cutoff30D.getDate() - 30);
+    
+    const prices30D = chartData.filter(d => new Date(d.time) >= cutoff30D);
+    const activePrices30D = prices30D.length > 0 ? prices30D : chartData;
+    
+    const sum30D = activePrices30D.reduce((acc, curr) => acc + curr.close, 0);
+    avg30D = Math.round(sum30D / activePrices30D.length);
+
+    // Dynamic Volatility calculation based on last 30 days
+    if (activePrices30D.length > 1) {
+      const mean = avg30D;
+      const variance = activePrices30D.reduce((acc, curr) => acc + Math.pow(curr.close - mean, 2), 0) / activePrices30D.length;
+      const stdDev = Math.sqrt(variance);
+      const cv = stdDev / (mean || 1);
+      
+      if (cv > 0.05) {
+        volatilityText = "Tinggi";
+      } else if (cv > 0.02) {
+        volatilityText = "Sedang";
+      } else {
+        volatilityText = "Rendah";
+      }
+    } else {
+      volatilityText = "Rendah";
+    }
+  }
+
   // Siapkan data untuk Export CSV
   const exportRows = chartData.map((item: ChartDataPoint) => [
     item.time,
@@ -160,19 +208,29 @@ export default async function CommodityDetail({
               <div className="grid grid-cols-2 gap-4 mt-8 border-t border-border-color pt-6">
                 <div>
                   <div className="text-xs font-mono text-accent-grey uppercase">Tertinggi (52W)</div>
-                  <div className="font-mono font-bold mt-1">Rp 15.000</div>
+                  <div className="font-mono font-bold mt-1">
+                    {high52W > 0 ? `Rp ${high52W.toLocaleString("id-ID")}` : "—"}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs font-mono text-accent-grey uppercase">Terendah (52W)</div>
-                  <div className="font-mono font-bold mt-1">Rp 11.200</div>
+                  <div className="font-mono font-bold mt-1">
+                    {low52W > 0 ? `Rp ${low52W.toLocaleString("id-ID")}` : "—"}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs font-mono text-accent-grey uppercase">Rata-rata 30D</div>
-                  <div className="font-mono font-bold mt-1">Rp 13.250</div>
+                  <div className="font-mono font-bold mt-1">
+                    {avg30D > 0 ? `Rp ${avg30D.toLocaleString("id-ID")}` : "—"}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs font-mono text-accent-grey uppercase">Volatilitas</div>
-                  <div className="font-mono font-bold mt-1 text-accent-red">Tinggi</div>
+                  <div className={`font-mono font-bold mt-1 ${
+                    volatilityText === "Tinggi" ? "text-accent-red" : volatilityText === "Sedang" ? "text-yellow-600" : "text-accent-green"
+                  }`}>
+                    {volatilityText}
+                  </div>
                 </div>
               </div>
             </div>
