@@ -139,3 +139,5 @@ ml-service/*.pyd
 @script
 
 storage/
+server/.wwebjs_auth/
+server/.wwebjs_cache/

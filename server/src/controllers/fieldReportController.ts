@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient, FieldReportStatus } from '@prisma/client';
 import { dispatchDailyNotifications } from './notificationController';
+import { checkAndTriggerAlerts } from '../utils/alertMonitor';
 
 const prisma = new PrismaClient();
 
@@ -206,6 +207,11 @@ export const updateFieldReportStatus = async (req: Request, res: Response) => {
               source: 'FieldReport',
             },
           });
+          
+          // Trigger WhatsApp alerts evaluations asynchronously
+          checkAndTriggerAlerts(report.commoditySlug, Number(report.price)).catch(e => 
+            console.error('Failed to evaluate alerts in updateFieldReportStatus:', e)
+          );
         }
       } catch (innerErr) {
         console.error('Failed to create Price from approved FieldReport', innerErr);
@@ -273,6 +279,12 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
         avg = Math.round(avg / 100) * 100;
 
         await prisma.price.create({ data: { commodityId: commodity.id, price: avg, date: start, market: g.market, status: 'VALID', source: 'FieldReportsAggregate' } });
+        
+        // Trigger WhatsApp alerts evaluations asynchronously
+        checkAndTriggerAlerts(g.commoditySlug, avg).catch(e => 
+          console.error('Failed to evaluate alerts in aggregateApprovedFieldReports:', e)
+        );
+
         created++;
         details.push({ key, created: true, count: g.prices.length });
       } catch (e) {

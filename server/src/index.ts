@@ -12,6 +12,8 @@ import authRoutes from './routes/authRoutes';
 import analisRoutes from './routes/analisRoutes';
 import { aggregateApprovedFieldReports } from './controllers/fieldReportController';
 
+import { whatsappService } from './utils/whatsappService';
+
 dotenv.config();
 
 const app = express();
@@ -64,6 +66,13 @@ app.use((error: unknown, req: Request, res: Response, next: express.NextFunction
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+
+  // Initialize WhatsApp connection in the background
+  try {
+    whatsappService.initialize();
+  } catch (waError) {
+    console.error('Failed to auto-initialize WhatsApp Service at boot:', waError);
+  }
 
   // Run aggregation once at startup immediately, then schedule daily at 01:00 local time
   try {
