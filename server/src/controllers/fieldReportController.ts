@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient, FieldReportStatus } from '@prisma/client';
 import { dispatchDailyNotifications } from './notificationController';
 import { checkAndTriggerAlerts } from '../utils/alertMonitor';
+import { syncDbToCsv } from '../utils/storageData';
 
 const prisma = new PrismaClient();
 
@@ -212,6 +213,11 @@ export const updateFieldReportStatus = async (req: Request, res: Response) => {
           checkAndTriggerAlerts(report.commoditySlug, Number(report.price)).catch(e => 
             console.error('Failed to evaluate alerts in updateFieldReportStatus:', e)
           );
+
+          // Sync database with storage CSV and clear cache
+          syncDbToCsv().catch(e => 
+            console.error('Failed to sync DB to CSV in updateFieldReportStatus:', e)
+          );
         }
       } catch (innerErr) {
         console.error('Failed to create Price from approved FieldReport', innerErr);
@@ -306,6 +312,13 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
           details: result.details as any,
         },
       });
+
+      // Sync database with storage CSV and clear cache once after the aggregation completes
+      try {
+        await syncDbToCsv();
+      } catch (syncErr) {
+        console.error('Failed to sync DB to CSV after aggregation:', syncErr);
+      }
 
       // Dispatch daily price notifications to subscribers matching their preferences
       await dispatchDailyNotifications();
