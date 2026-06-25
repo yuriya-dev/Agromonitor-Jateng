@@ -255,6 +255,27 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
       groups[key].reportIds.push(r.id);
     }
 
+    // Create the AggregationRun record first to get its ID
+    const run = await prisma.aggregationRun.create({
+      data: {
+        runAt: new Date(),
+        scanned: reports.length,
+        groups: Object.keys(groups).length,
+        created: 0,
+        skipped: 0,
+        details: [] as any,
+      },
+    });
+
+    // Link all processed FieldReports to this AggregationRun
+    const reportIds = reports.map(r => r.id);
+    if (reportIds.length > 0) {
+      await prisma.fieldReport.updateMany({
+        where: { id: { in: reportIds } },
+        data: { aggregationRunId: run.id },
+      });
+    }
+
     let created = 0;
     let skipped = 0;
     const details: Array<{ key: string; created: boolean; count: number }> = [];
@@ -284,7 +305,17 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
         // round to nearest 100 to match seeding behaviour
         avg = Math.round(avg / 100) * 100;
 
-        await prisma.price.create({ data: { commodityId: commodity.id, price: avg, date: start, market: g.market, status: 'VALID', source: 'FieldReportsAggregate' } });
+        await prisma.price.create({
+          data: {
+            commodityId: commodity.id,
+            price: avg,
+            date: start,
+            market: g.market,
+            status: 'VALID',
+            source: 'FieldReportsAggregate',
+            aggregationRunId: run.id,
+          }
+        });
         
         // Trigger WhatsApp alerts evaluations asynchronously
         checkAndTriggerAlerts(g.commoditySlug, avg).catch(e => 
@@ -300,13 +331,11 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
 
     const result = { scanned: reports.length, groups: Object.keys(groups).length, created, skipped, details };
 
-    // persist aggregation run for audit/history
+    // Update the AggregationRun record with final metrics
     try {
-      await prisma.aggregationRun.create({
+      await prisma.aggregationRun.update({
+        where: { id: run.id },
         data: {
-          runAt: new Date(),
-          scanned: result.scanned,
-          groups: result.groups,
           created: result.created,
           skipped: result.skipped,
           details: result.details as any,
@@ -323,7 +352,7 @@ export const aggregateApprovedFieldReports = async (req?: Request | any, res?: R
       // Dispatch daily price notifications to subscribers matching their preferences
       await dispatchDailyNotifications();
     } catch (e) {
-      console.error('Failed to persist AggregationRun or dispatch notifications', e);
+      console.error('Failed to update AggregationRun or dispatch notifications', e);
     }
 
     if (res) return res.json({ success: true, data: result });
