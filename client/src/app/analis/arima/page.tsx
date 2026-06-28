@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Activity, RefreshCw, AlertCircle, CheckCircle, Database } from "lucide-react";
 import { API_BASE } from "@/lib/api-config";
+import PredictionSection from "@/components/PredictionSection";
 
 export default function AnalisArima() {
   const [commodities, setCommodities] = useState<any[]>([]);
@@ -172,6 +173,8 @@ export default function AnalisArima() {
     );
   }
 
+  const selectedName = commodities.find(c => c.id === selectedSlug)?.name || selectedSlug;
+
   return (
     <>
       <div className="flex justify-between items-center mb-6 border-b pb-4">
@@ -199,7 +202,7 @@ export default function AnalisArima() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mb-8">
         {/* Kolom Kiri: Form Config */}
         <div className="lg:col-span-2 bg-white border-2 border-border-color shadow-brutal flex flex-col">
           <div className="p-4 border-b-2 border-border-color bg-surface flex items-center justify-between">
@@ -346,3 +349,5 @@ export default function AnalisArima() {
     </>
   );
 }
+
+

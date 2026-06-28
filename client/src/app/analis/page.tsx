@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown, RefreshCw, AlertTriangle, CheckCircle, HelpCircle } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, TrendingDown, RefreshCw, AlertTriangle, CheckCircle, LineChart } from "lucide-react";
 import { API_BASE } from "@/lib/api-config";
 
 export default function AnalisDashboard() {
@@ -135,11 +136,11 @@ export default function AnalisDashboard() {
                 <th className="p-3 font-mono text-xs font-bold uppercase text-center">Status Peringatan</th>
                 <th className="p-3 font-mono text-xs font-bold uppercase text-center">Akurasi Model</th>
                 <th className="p-3 font-mono text-xs font-bold uppercase">Metode</th>
+                <th className="p-3 font-mono text-xs font-bold uppercase text-center">Visualisasi</th>
               </tr>
             </thead>
             <tbody>
               {commodities.map((item: any) => {
-                // Formatting alert trigger color
                 let alertColor = "bg-accent-grey/20 text-accent-grey border-accent-grey";
                 let alertLabel = "AMAN";
                 
@@ -151,7 +152,6 @@ export default function AnalisDashboard() {
                   alertLabel = "WASpada";
                 }
 
-                // Formatting volatility badge
                 let volColor = "text-accent-green";
                 if (item.volatility === "TINGGI") volColor = "text-accent-red font-bold";
                 else if (item.volatility === "SEDANG") volColor = "text-yellow-600";
@@ -193,6 +193,15 @@ export default function AnalisDashboard() {
                     <td className="p-3 font-mono text-[10px] text-accent-grey uppercase max-w-[150px] truncate" title={item.modelUsed}>
                       {item.modelUsed}
                     </td>
+                    <td className="p-3 text-center">
+                      <Link
+                        href={`/analis/grafik?commodity=${item.id}`}
+                        className="font-mono text-xs font-bold px-3 py-1 border border-border-color bg-surface hover:bg-black hover:text-white uppercase flex items-center justify-center mx-auto gap-1 transition-all shadow-sm"
+                      >
+                        <LineChart size={14} />
+                        Buka Grafik
+                      </Link>
+                    </td>
                   </tr>
                 );
               })}
@@ -203,3 +212,5 @@ export default function AnalisDashboard() {
     </>
   );
 }
+
+

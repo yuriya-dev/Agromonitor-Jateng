@@ -6,7 +6,8 @@ import { useEffect } from "react";
 import { 
   BarChart2, 
   Settings, 
-  FileText
+  FileText,
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -64,6 +65,19 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
             <BarChart2 size={18} className="mr-3" />
             Dashboard Analitik
           </Link>
+
+          <Link 
+            href="/analis/grafik" 
+            className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
+              isActive("/analis/grafik") 
+                ? "bg-surface border-r-4 border-accent-green text-foreground font-bold" 
+                : "hover:bg-surface text-accent-grey hover:text-foreground"
+            }`}
+          >
+            <TrendingUp size={18} className="mr-3" />
+            Grafik Prediksi
+          </Link>
+
           <Link 
             href="/analis/arima" 
             className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
@@ -107,6 +121,7 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
         <header className="bg-background border-b-2 border-border-color px-8 py-4 flex justify-between items-center shrink-0">
           <h2 className="text-2xl font-bold uppercase tracking-tight">
             {pathname === "/analis" && "Advanced Analytics & Prediction"}
+            {pathname === "/analis/grafik" && "Grafik Prediksi & Harga Asli"}
             {pathname === "/analis/arima" && "Konfigurasi Model ARIMA"}
             {pathname === "/analis/laporan" && "Ekspor Laporan Analitik"}
           </h2>

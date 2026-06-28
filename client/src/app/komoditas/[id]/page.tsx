@@ -100,26 +100,26 @@ export default async function CommodityDetail({
     const cutoff52W = new Date(latestDate);
     cutoff52W.setDate(cutoff52W.getDate() - 364);
     
-    const prices52W = chartData.filter(d => new Date(d.time) >= cutoff52W);
+    const prices52W = chartData.filter((d: any) => new Date(d.time) >= cutoff52W);
     const activePrices52W = prices52W.length > 0 ? prices52W : chartData;
     
-    high52W = Math.max(...activePrices52W.map(d => d.high));
-    low52W = Math.min(...activePrices52W.map(d => d.low));
+    high52W = Math.max(...activePrices52W.map((d: any) => d.high));
+    low52W = Math.min(...activePrices52W.map((d: any) => d.low));
 
     // 30 Days Average (30 days limit from latest date)
     const cutoff30D = new Date(latestDate);
     cutoff30D.setDate(cutoff30D.getDate() - 30);
     
-    const prices30D = chartData.filter(d => new Date(d.time) >= cutoff30D);
+    const prices30D = chartData.filter((d: any) => new Date(d.time) >= cutoff30D);
     const activePrices30D = prices30D.length > 0 ? prices30D : chartData;
     
-    const sum30D = activePrices30D.reduce((acc, curr) => acc + curr.close, 0);
+    const sum30D = activePrices30D.reduce((acc: number, curr: any) => acc + curr.close, 0);
     avg30D = Math.round(sum30D / activePrices30D.length);
 
     // Dynamic Volatility calculation based on last 30 days
     if (activePrices30D.length > 1) {
       const mean = avg30D;
-      const variance = activePrices30D.reduce((acc, curr) => acc + Math.pow(curr.close - mean, 2), 0) / activePrices30D.length;
+      const variance = activePrices30D.reduce((acc: number, curr: any) => acc + Math.pow(curr.close - mean, 2), 0) / activePrices30D.length;
       const stdDev = Math.sqrt(variance);
       const cv = stdDev / (mean || 1);
       

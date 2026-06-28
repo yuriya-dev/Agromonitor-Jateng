@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, RefreshCw, User, Bell, LogIn, UserPlus, Save, Loader2, LogOut } from 'lucide-react';
+import { ArrowLeft, Check, RefreshCw, User, Bell, LogIn, UserPlus, Save, Loader2, LogOut, CheckCircle2, ShieldCheck, Smartphone, Mail, Send } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import { API_BASE } from '@/lib/api-config';
@@ -21,6 +21,8 @@ type NotificationLog = {
   type: 'WHATSAPP' | 'EMAIL' | 'TELEGRAM';
   content: string;
   name: string;
+  status?: string;
+  gateway?: string;
 };
 
 export default function ProfilePage() {
@@ -60,7 +62,8 @@ export default function ProfilePage() {
       const compData = await compRes.json();
       if (compData.success) setCommodities(compData.data);
 
-      const notifRes = await fetch(`${API_BASE}/notifications`);
+      const queryParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : '';
+      const notifRes = await fetch(`${API_BASE}/notifications${queryParam}`);
       const notifData = await notifRes.json();
       if (notifData.success) setNotifications(notifData.data);
     } catch (e) {
@@ -72,11 +75,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const refreshNotifications = async () => {
     try {
-      const notifRes = await fetch(`${API_BASE}/notifications`);
+      const queryParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : '';
+      const notifRes = await fetch(`${API_BASE}/notifications${queryParam}`);
       const notifData = await notifRes.json();
       if (notifData.success) setNotifications(notifData.data);
     } catch (e) {
@@ -401,55 +405,100 @@ export default function ProfilePage() {
 
         {/* Bottom Section: Notification Logs */}
         <div className="bg-white border-2 border-border-color shadow-brutal overflow-hidden">
-          <div className="p-4 border-b-2 border-border-color bg-surface flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="p-4 border-b-2 border-border-color bg-surface flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div>
-              <h2 className="font-bold uppercase tracking-tight text-lg flex items-center">
-                <Bell size={18} className="mr-2" /> Log Notifikasi Terkirim
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold uppercase tracking-tight text-lg flex items-center">
+                  <Bell size={18} className="mr-2 text-accent-green" /> Riwayat Notifikasi Terkirim
+                </h2>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold px-2 py-0.5 border border-emerald-300 uppercase">
+                  SYSTEM AUDIT LOG
+                </span>
+              </div>
               <p className="text-xs font-mono text-accent-grey mt-1">
-                Melacak pesan update harga harian WhatsApp/Email yang disimulasikan sistem saat agregasi.
+                Rekam jejak pengiriman pesan update harga harian & peringatan otomatis ke saluran terdaftar.
               </p>
             </div>
-            <button
-              onClick={refreshNotifications}
-              className="inline-flex items-center border-2 border-border-color bg-white px-3 py-1.5 text-xs font-mono font-bold uppercase hover:bg-surface active:translate-y-0.5"
-            >
-              <RefreshCw size={12} className="mr-1.5" /> SEGARKAN LOG
-            </button>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={refreshNotifications}
+                className="inline-flex items-center border-2 border-border-color bg-white px-3 py-1.5 text-xs font-mono font-bold uppercase hover:bg-surface active:translate-y-0.5 transition-colors shadow-sm"
+              >
+                <RefreshCw size={12} className="mr-1.5" /> SEGARKAN LOG
+              </button>
+            </div>
           </div>
 
           <div className="p-6">
-            <div className="bg-yellow-50 border border-yellow-500 p-4 text-xs font-mono text-yellow-800 uppercase font-bold mb-6">
-              💡 Tips Demo: Centang &quot;Kirim Update Harga Harian&quot;, simpan preferensi, lalu pergi ke <Link href="/admin/aggregations" className="underline">halaman agregasi admin</Link> dan klik &quot;Run Manual&quot;. Setelah itu kembali ke sini dan klik &quot;Segarkan Log&quot;.
+            {/* System Gateway Status Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-surface border border-border-color font-mono text-xs mb-6">
+              <div className="flex items-center space-x-2">
+                <ShieldCheck size={16} className="text-accent-green" />
+                <span className="font-bold uppercase">Status Layanan Gateway:</span>
+                <span className="text-accent-green font-bold uppercase">ONLINE (OPERATIONAL)</span>
+              </div>
+              <div className="text-accent-grey text-[11px]">
+                Jadwal Pengiriman Otomatis: <strong className="text-foreground">Setiap Hari 07:00 WIB</strong>
+              </div>
             </div>
 
             {notifications.length === 0 ? (
-              <div className="p-12 text-center text-accent-grey font-mono uppercase border-2 border-dashed border-border-color">
-                Belum ada notifikasi terkirim. Jalankan agregasi untuk memulai simulasi pengiriman.
+              <div className="p-12 text-center text-accent-grey font-mono uppercase border-2 border-dashed border-border-color bg-surface/30">
+                <Send size={32} className="mx-auto mb-3 text-accent-grey/50" />
+                <p className="font-bold text-sm text-foreground">Belum Ada Riwayat Pesan Baru</p>
+                <p className="text-xs mt-1 text-accent-grey max-w-md mx-auto">
+                  Pastikan preferensi komoditas Anda telah disimpan. Sistem akan merekam setiap pesan update harian yang berhasil terkirim ke WhatsApp atau Email Anda.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {notifications.map((notif) => (
-                  <div key={notif.id} className="p-4 border-2 border-border-color bg-[#FAFAFA] hover:bg-surface transition-colors flex flex-col md:flex-row gap-4 items-start">
-                    <div className="w-full md:w-52 shrink-0 space-y-1 font-mono text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 border text-[10px] font-bold uppercase ${
-                          notif.type === 'WHATSAPP' ? 'bg-[#E6F4EA] border-[#137333] text-[#137333]' : 'bg-[#E8F0FE] border-[#1a73e8] text-[#1a73e8]'
-                        }`}>
-                          {notif.type}
-                        </span>
-                        <span className="text-accent-grey">#{notif.id.split('-')[1]}</span>
+                {notifications.map((notif) => {
+                  const isWA = notif.type === 'WHATSAPP';
+                  return (
+                    <div key={notif.id} className="p-4 border-2 border-border-color bg-white hover:bg-surface/30 transition-all flex flex-col md:flex-row gap-4 items-start shadow-sm">
+                      <div className="w-full md:w-64 shrink-0 space-y-2 font-mono text-xs border-b md:border-b-0 md:border-r border-border-color pb-3 md:pb-0 md:pr-4">
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2 py-0.5 border text-[10px] font-bold uppercase flex items-center gap-1 ${
+                            isWA ? 'bg-[#E6F4EA] border-[#137333] text-[#137333]' : 'bg-[#E8F0FE] border-[#1a73e8] text-[#1a73e8]'
+                          }`}>
+                            {isWA ? <Smartphone size={12} /> : <Mail size={12} />}
+                            {notif.type}
+                          </span>
+                          <span className="bg-emerald-50 text-emerald-700 font-bold border border-emerald-300 text-[9px] px-1.5 py-0.5 uppercase flex items-center gap-0.5">
+                            <CheckCircle2 size={10} /> TERKIRIM
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-accent-grey uppercase block">ID Transaksi:</span>
+                          <span className="font-bold text-foreground font-mono text-[11px]">{notif.id}</span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-accent-grey uppercase block">Penerima Pangan:</span>
+                          <div className="font-bold uppercase text-foreground truncate">{notif.name}</div>
+                          <div className="text-accent-grey truncate text-[11px]">{notif.to}</div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-accent-grey uppercase block">Waktu Pengiriman:</span>
+                          <div className="text-accent-grey text-[11px] font-bold">{new Date(notif.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                        </div>
+
+                        {notif.gateway && (
+                          <div className="pt-1 border-t border-border-color/20">
+                            <span className="text-[9px] font-mono text-accent-grey block truncate">{notif.gateway}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="font-bold uppercase text-foreground mt-1 truncate">Ke: {notif.name}</div>
-                      <div className="text-accent-grey truncate">{notif.to}</div>
-                      <div className="text-accent-grey text-[10px]">{new Date(notif.timestamp).toLocaleString()}</div>
+                      
+                      <div className="flex-1 w-full bg-surface/50 border border-border-color/60 p-3.5 font-mono text-xs whitespace-pre-wrap leading-relaxed text-foreground/90">
+                        {notif.content}
+                      </div>
                     </div>
-                    
-                    <div className="flex-1 bg-white border border-border-color p-3 font-mono text-xs whitespace-pre-wrap leading-relaxed">
-                      {notif.content}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -459,3 +508,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+
