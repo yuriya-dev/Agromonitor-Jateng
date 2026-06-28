@@ -67,7 +67,7 @@ export default async function CommodityDetail({
   };
 
   const name = commodityData?.name || formatName(commodityId);
-  const chartData = commodityData?.prices || [];
+  const chartData: ChartDataPoint[] = commodityData?.prices || [];
   
   // Calculate current price and change based on chart data
   let currentPrice = 0;
@@ -166,7 +166,7 @@ export default async function CommodityDetail({
               headers={["Tanggal", "Harga Buka", "Harga Tertinggi", "Harga Terendah", "Harga Tutup"]}
               rows={exportRows}
             />
-            <SetAlertButton commodityName={name} currentPrice={currentPrice} />
+            <SetAlertButton commodityName={name} currentPrice={currentPrice} commoditySlug={commodityId} />
           </div>
         </div>
         <Ticker items={tickerItems} />

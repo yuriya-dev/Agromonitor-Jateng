@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
+import { whatsappService } from '../utils/whatsappService';
 
 const prisma = new PrismaClient();
 
@@ -111,6 +112,129 @@ export const sendTelegramAlert = async (req: Request, res: Response): Promise<vo
   }
 };
 
+// POST /api/notifications/whatsapp
+export const sendWhatsAppAlert = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { commodityName, commoditySlug, condition, targetPrice, currentPrice, whatsapp } = req.body;
+
+    if (!whatsapp) {
+      res.status(400).json({ success: false, message: "Nomor WhatsApp belum ditentukan. Silakan isi di profil terlebih dahulu." });
+      return;
+    }
+
+    // Try to find the user by WhatsApp number to persist the alert
+    const userObj = await prisma.user.findFirst({
+      where: { whatsapp }
+    });
+
+    let isSaved = false;
+    if (userObj) {
+      const slug = commoditySlug || commodityName.toLowerCase().replace(/\s+/g, '-');
+      await prisma.priceAlert.create({
+        data: {
+          userId: userObj.id,
+          commoditySlug: slug,
+          condition,
+          targetPrice: Number(targetPrice),
+          currentPrice: Number(currentPrice),
+          isTriggered: false
+        }
+      });
+      console.log(`[ALERT SYSTEM] Alert stored in database for user: ${userObj.email} on commodity: ${slug}`);
+      isSaved = true;
+    }
+
+    const message = `🚨 *AGROMONITOR JATENG ALERT* 🚨\n\n` +
+                    `📦 Komoditas: *${commodityName}*\n` +
+                    `💰 Harga Saat Ini: Rp ${Number(currentPrice).toLocaleString('id-ID')}\n` +
+                    `🎯 Kondisi Alert: Harga ${condition === 'above' ? 'NAIK DI ATAS' : 'TURUN DI BAWAH'} Rp ${Number(targetPrice).toLocaleString('id-ID')}\n\n` +
+                    `Peringatan harga telah didaftarkan ke sistem pemantauan WhatsApp Anda.`;
+
+    // Try to send confirmation via WhatsApp Web API
+    const sent = await whatsappService.sendMessage(whatsapp, message);
+
+    // Save to logs
+    sentNotificationsLog.push({
+      id: `NTF-${Math.random().toString(36).substring(2, 8).toUpperCase()}-WA`,
+      timestamp: new Date(),
+      to: whatsapp,
+      type: 'WHATSAPP',
+      name: req.body.userName || 'Pengguna',
+      content: message
+    });
+
+    if (sent) {
+      res.status(200).json({ 
+        success: true, 
+        message: isSaved 
+          ? "Peringatan WhatsApp berhasil didaftarkan & pesan konfirmasi terkirim ke nomor Anda!" 
+          : "Pesan konfirmasi terkirim ke nomor Anda (Peringatan tidak tersimpan karena nomor WA tidak terdaftar di akun mana pun)."
+      });
+    } else {
+      res.status(200).json({ 
+        success: true, 
+        message: isSaved 
+          ? "Peringatan WhatsApp didaftarkan (Pesan konfirmasi dikirim via Simulasi)." 
+          : "Notifikasi WhatsApp diproses via simulasi (Gateway tidak aktif & nomor WA tidak terdaftar di akun)."
+      });
+    }
+  } catch (error: any) {
+    console.error("Error sending WhatsApp alert:", error.message);
+    res.status(500).json({ success: false, message: "Gagal mengirim notifikasi WhatsApp" });
+  }
+};
+
+// GET /api/notifications/whatsapp/status
+export const getWhatsAppStatus = async (req: Request, res: Response) => {
+  try {
+    const status = whatsappService.getStatus();
+    const qrCode = whatsappService.getQRCode();
+    const lastError = whatsappService.getLastError();
+
+    res.json({
+      success: true,
+      data: {
+        status,
+        qrCode,
+        lastError
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// POST /api/notifications/whatsapp/connect
+export const connectWhatsApp = async (req: Request, res: Response) => {
+  try {
+    // Run initialization async in background
+    whatsappService.initialize();
+    res.json({
+      success: true,
+      message: 'WhatsApp connection process initiated.'
+    });
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
+  }
+};
+
+// POST /api/notifications/whatsapp/disconnect
+export const disconnectWhatsApp = async (req: Request, res: Response) => {
+  try {
+    const success = await whatsappService.disconnect();
+    if (success) {
+      res.json({ success: true, message: 'WhatsApp disconnected.' });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to disconnect WhatsApp.' });
+    }
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
+  }
+};
+
 // Core helper function to dispatch updates to users based on preferences
 export const dispatchDailyNotifications = async () => {
   try {
@@ -194,6 +318,9 @@ export const dispatchDailyNotifications = async () => {
       
       // Send WhatsApp
       if (user.whatsapp) {
+        // Attempt to send via real WhatsApp client
+        const sent = await whatsappService.sendMessage(user.whatsapp, messageContent);
+        
         sentNotificationsLog.push({
           id: `${baseId}-WAP`,
           timestamp: new Date(),
@@ -204,7 +331,12 @@ export const dispatchDailyNotifications = async () => {
           gateway: 'Agromonitor WA Gateway v2.4 (Status: 200 OK)',
           content: messageContent
         });
-        console.log(`[NOTIFICATION SYSTEM] [WHATSAPP] Sent to ${user.whatsapp}:\n${messageContent}\n---`);
+
+        if (sent) {
+          console.log(`[NOTIFICATION SYSTEM] [WHATSAPP] Sent actual message to ${user.whatsapp}`);
+        } else {
+          console.log(`[NOTIFICATION SYSTEM] [WHATSAPP] Sent to ${user.whatsapp} (Simulation Fallback):\n${messageContent}\n---`);
+        }
       }
     }
     
@@ -213,4 +345,3 @@ export const dispatchDailyNotifications = async () => {
     console.error('[NOTIFICATION SYSTEM] Error dispatching daily updates:', error);
   }
 };
-

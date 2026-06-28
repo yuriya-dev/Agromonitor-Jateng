@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export interface StorageRow {
   provinsi: string;
@@ -101,7 +104,24 @@ function normalizeText(value: string): string {
 }
 
 function parseCsvLine(line: string): string[] {
-  return line.split(',').map((entry) => entry.trim());
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
 }
 
 export function loadRows(): StorageRow[] {
@@ -538,4 +558,50 @@ export async function getPredictionBySlug(slug: string, days: number, region?: s
     alertTrigger: prediction.alertTrigger,
     dynamicNote: prediction.dynamicNote,
   };
+}
+
+export async function syncDbToCsv() {
+  console.log('[SYNC] Exporting database prices to CSV...');
+  try {
+    const prices = await prisma.price.findMany({
+      include: {
+        commodity: true,
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+
+    if (!fs.existsSync(STORAGE_DIR)) {
+      fs.mkdirSync(STORAGE_DIR, { recursive: true });
+    }
+
+    const csvPath = path.join(STORAGE_DIR, 'data_harga_pangan.csv');
+    let csvContent = 'provinsi,kabupaten_kota,komoditas,unit,tanggal_awal,harga_tanggal_awal\n';
+
+    for (const p of prices) {
+      const dateStr = p.date.toISOString().split('T')[0];
+      const row = [
+        'Jawa Tengah',
+        p.market,
+        p.commodity.name,
+        p.commodity.unit,
+        dateStr,
+        p.price,
+      ];
+      csvContent += row.map((val) => {
+        const s = String(val);
+        if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+          return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
+      }).join(',') + '\n';
+    }
+
+    fs.writeFileSync(csvPath, csvContent, 'utf8');
+    cachedRows = null; // Clear memory cache!
+    console.log(`[SYNC] Successfully sync'd ${prices.length} rows to ${csvPath} and cleared cache.`);
+  } catch (error) {
+    console.error('[SYNC] Failed to sync database to CSV:', error);
+  }
 }
