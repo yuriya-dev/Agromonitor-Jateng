@@ -5,8 +5,10 @@ import { syncDbToCsv } from './storageData';
 const prisma = new PrismaClient();
 
 export async function syncKemendagData() {
-  // Use the connection URL for the external database from the env
-  const connectionString = process.env.SP2KP_KEMENDAG_URL || 'postgresql://postgres.jgzkecfbrsfpfqzdtrky:sp2kp_kemendag@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres';
+  const connectionString = process.env.SP2KP_KEMENDAG_URL;
+  if (!connectionString) {
+    throw new Error('SP2KP_KEMENDAG_URL environment variable is not defined.');
+  }
   
   const client = new Client({
     connectionString,
