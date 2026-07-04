@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { syncKemendagData } from '../utils/syncKemendag';
 
 const prisma = new PrismaClient();
 
@@ -220,5 +221,14 @@ export const deleteUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+export const syncKemendagDataController = async (req: Request, res: Response) => {
+  try {
+    const result = await syncKemendagData();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to sync Kemendag data' });
   }
 };

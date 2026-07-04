@@ -145,5 +145,5 @@ app.listen(PORT, () => {
     console.error('Failed to schedule daily aggregation', e);
   }
 });
-// Trigger nodemon reload
+// Trigger nodemon reload to initialize WhatsApp client with the released lock
 

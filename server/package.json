@@ -8,6 +8,7 @@
     "build": "tsc",
     "postinstall": "prisma generate",
     "import:sp2k": "ts-node scripts/importFromSP2K.ts",
+    "import:kemendag": "ts-node scripts/importFromKemendag.ts",
     "import:csv": "ts-node scripts/importFromCsv.ts",
     "export:csv": "ts-node scripts/exportDbToCsv.ts"
   },

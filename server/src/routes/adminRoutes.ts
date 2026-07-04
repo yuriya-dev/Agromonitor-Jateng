@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDashboardMetrics, getTransactions, getUsers, createUser, updateUser, deleteUser } from '../controllers/adminController';
+import { getDashboardMetrics, getTransactions, getUsers, createUser, updateUser, deleteUser, syncKemendagDataController } from '../controllers/adminController';
 import { getFieldReports, updateFieldReportStatus, aggregateApprovedFieldReports, getAggregationRuns, getAggregationRunById } from '../controllers/fieldReportController';
 
 const router = Router();
@@ -15,5 +15,6 @@ router.put('/field-reports/:id', updateFieldReportStatus);
 router.post('/field-reports/aggregate', aggregateApprovedFieldReports);
 router.get('/aggregations', getAggregationRuns);
 router.get('/aggregations/:id', getAggregationRunById);
+router.post('/sync-kemendag', syncKemendagDataController);
 
 export default router;

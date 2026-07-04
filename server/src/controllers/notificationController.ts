@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 import { whatsappService } from '../utils/whatsappService';
+import { getAllCommoditySummaries } from '../utils/storageData';
 
 const prisma = new PrismaClient();
 
@@ -255,27 +256,16 @@ export const dispatchDailyNotifications = async () => {
     
     console.log(`[NOTIFICATION SYSTEM] Dispatching for ${subscribers.length} subscribers.`);
     
-    // Fetch latest prices for commodities
-    const commodities = await prisma.commodity.findMany({
-      include: {
-        prices: {
-          orderBy: {
-            date: 'desc'
-          },
-          take: 1
-        }
-      }
-    });
+    // Fetch latest prices for commodities using the same utility as the dashboard/chart
+    const summaries = getAllCommoditySummaries();
     
     const priceMap = new Map<string, { price: number; name: string; unit: string }>();
-    for (const c of commodities) {
-      if (c.prices.length > 0) {
-        priceMap.set(c.slug, {
-          price: c.prices[0].price,
-          name: c.name,
-          unit: c.unit
-        });
-      }
+    for (const s of summaries) {
+      priceMap.set(s.id, {
+        price: s.price,
+        name: s.name,
+        unit: s.unit
+      });
     }
     
     for (const user of subscribers) {

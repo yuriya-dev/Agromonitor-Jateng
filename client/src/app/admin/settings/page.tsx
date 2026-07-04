@@ -10,6 +10,27 @@ export default function AdminSettings() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [waError, setWaError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [isSyncingKemendag, setIsSyncingKemendag] = useState<boolean>(false);
+
+  const handleSyncKemendag = async () => {
+    setIsSyncingKemendag(true);
+    const loadingToastId = toast.loading("Menghubungkan ke database Kemendag & menyinkronkan data...");
+    try {
+      const res = await fetch(`${API_BASE}/admin/sync-kemendag`, { method: "POST" });
+      const json = await res.json();
+      toast.dismiss(loadingToastId);
+      if (json.success) {
+        toast.success(`Sinkronisasi berhasil! Menambahkan ${json.inserted} data baru (${json.skipped} dilewati).`);
+      } else {
+        toast.error(json.message || "Gagal menyinkronkan data Kemendag.");
+      }
+    } catch {
+      toast.dismiss(loadingToastId);
+      toast.error("Gagal terhubung ke server untuk sinkronisasi.");
+    } finally {
+      setIsSyncingKemendag(false);
+    }
+  };
 
   const fetchWaStatus = async () => {
     try {
@@ -108,11 +129,12 @@ export default function AdminSettings() {
             </div>
             <div className="pt-4 border-t-2 border-border-color">
               <button 
-                onClick={() => toast.success("Test koneksi API eksternal berhasil!")}
-                className="w-full bg-surface border-2 border-border-color text-foreground font-mono font-bold uppercase py-3 flex justify-center items-center hover:border-foreground transition-colors"
+                onClick={handleSyncKemendag}
+                disabled={isSyncingKemendag}
+                className="w-full bg-surface border-2 border-border-color text-foreground font-mono font-bold uppercase py-3 flex justify-center items-center hover:border-foreground disabled:opacity-50 transition-colors"
               >
-                <RefreshCw size={18} className="mr-2" />
-                Test Koneksi API
+                <RefreshCw size={18} className={`mr-2 ${isSyncingKemendag ? 'animate-spin' : ''}`} />
+                {isSyncingKemendag ? "Sinkronisasi..." : "Sinkronkan Data Kemendag"}
               </button>
             </div>
           </div>
