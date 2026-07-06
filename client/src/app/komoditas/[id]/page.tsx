@@ -1,10 +1,9 @@
 import { ArrowLeft, Share2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import CandlestickChart from "@/components/CandlestickChart";
+import CombinedPredictionChart from "@/components/CombinedPredictionChart";
 import Ticker from "@/components/Ticker";
 import SetAlertButton from "@/components/SetAlertButton";
 import ExportButton from "@/components/ExportButton";
-import PredictionSection from "@/components/PredictionSection";
 
 interface ChartDataPoint {
   time: string;
@@ -174,9 +173,9 @@ export default async function CommodityDetail({
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto space-y-6">
           {commodityData?.isFallback && (
-            <div className="bg-yellow-50 border-2 border-yellow-500 text-yellow-900 p-4 mb-6 font-mono text-sm shadow-brutal flex items-center space-x-3">
+            <div className="bg-yellow-50 border-2 border-yellow-500 text-yellow-900 p-4 font-mono text-sm shadow-brutal flex items-center space-x-3">
               <span className="text-xl">⚠️</span>
               <span>
                 <strong>Pemberitahuan:</strong> Data harga untuk komoditas ini tidak tersedia di wilayah <strong>{pasar?.toUpperCase()}</strong>. Sistem secara otomatis menampilkan data rata-rata Jawa Tengah sebagai alternatif.
@@ -184,120 +183,123 @@ export default async function CommodityDetail({
             </div>
           )}
           
+          {/* 1. Grafik Prediksi Terintegrasi di Atas (Full Width) */}
+          <div className="w-full">
+            <CombinedPredictionChart commodityId={commodityId} name={name} pasar={pasar} />
+          </div>
+
+          {/* 2. Informasi & Status di Bawah Grafik */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Column: Info & Stats */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white border-2 border-border-color p-6 shadow-brutal relative">
-              <div className="text-xs font-mono text-accent-grey mb-2 uppercase tracking-widest border-b border-border-color pb-2">
-                ID: {commodityId.toUpperCase()} • PASAR: {pasar ? (commodityData?.isFallback ? `${pasar.toUpperCase()} (FALLBACK KE JATENG)` : pasar.toUpperCase()) : "RATA-RATA JATENG"}
-              </div>
-              <h2 className="text-4xl font-bold uppercase tracking-tight mt-4">{name}</h2>
-              
-              <div className="mt-8">
-                <div className="text-sm font-mono text-accent-grey mb-1 uppercase">Harga Terkini (KG)</div>
-                <div className="text-5xl font-mono font-bold">
-                  Rp {currentPrice.toLocaleString("id-ID")}
+            {/* Left Column: Info & Stats */}
+            <div className="lg:col-span-2">
+              <div className="bg-white border-2 border-border-color p-6 shadow-brutal relative h-full">
+                <div className="text-xs font-mono text-accent-grey mb-2 uppercase tracking-widest border-b border-border-color pb-2">
+                  ID: {commodityId.toUpperCase()} • PASAR: {pasar ? (commodityData?.isFallback ? `${pasar.toUpperCase()} (FALLBACK KE JATENG)` : pasar.toUpperCase()) : "RATA-RATA JATENG"}
                 </div>
-                <div className={`mt-2 flex items-center font-mono font-bold text-lg ${isUp ? "text-accent-green" : isDown ? "text-accent-red" : "text-accent-grey"}`}>
-                  <span className="mr-2">{isUp ? "▲" : isDown ? "▼" : "—"}</span>
-                  {Math.abs(changeAmount).toLocaleString("id-ID")} ({Math.abs(changePercent)}%)
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mt-8 border-t border-border-color pt-6">
-                <div>
-                  <div className="text-xs font-mono text-accent-grey uppercase">Tertinggi (52W)</div>
-                  <div className="font-mono font-bold mt-1">
-                    {high52W > 0 ? `Rp ${high52W.toLocaleString("id-ID")}` : "—"}
+                <h2 className="text-4xl font-bold uppercase tracking-tight mt-4">{name}</h2>
+                
+                <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                  <div>
+                    <div className="text-sm font-mono text-accent-grey mb-1 uppercase">Harga Terkini (KG)</div>
+                    <div className="text-5xl font-mono font-bold">
+                      Rp {currentPrice.toLocaleString("id-ID")}
+                    </div>
+                    <div className={`mt-2 flex items-center font-mono font-bold text-lg ${isUp ? "text-accent-green" : isDown ? "text-accent-red" : "text-accent-grey"}`}>
+                      <span className="mr-2">{isUp ? "▲" : isDown ? "▼" : "—"}</span>
+                      {Math.abs(changeAmount).toLocaleString("id-ID")} ({Math.abs(changePercent)}%)
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-xs font-mono text-accent-grey uppercase">Terendah (52W)</div>
-                  <div className="font-mono font-bold mt-1">
-                    {low52W > 0 ? `Rp ${low52W.toLocaleString("id-ID")}` : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-mono text-accent-grey uppercase">Rata-rata 30D</div>
-                  <div className="font-mono font-bold mt-1">
-                    {avg30D > 0 ? `Rp ${avg30D.toLocaleString("id-ID")}` : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-mono text-accent-grey uppercase">Volatilitas</div>
-                  <div className={`font-mono font-bold mt-1 ${
-                    volatilityText === "Tinggi" ? "text-accent-red" : volatilityText === "Sedang" ? "text-yellow-600" : "text-accent-green"
-                  }`}>
-                    {volatilityText}
+
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t-2 md:border-t-0 md:border-l-2 border-border-color pt-6 md:pt-0 md:pl-8 flex-1">
+                    <div>
+                      <div className="text-xs font-mono text-accent-grey uppercase">Tertinggi (52W)</div>
+                      <div className="font-mono font-bold mt-1">
+                        {high52W > 0 ? `Rp ${high52W.toLocaleString("id-ID")}` : "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-mono text-accent-grey uppercase">Terendah (52W)</div>
+                      <div className="font-mono font-bold mt-1">
+                        {low52W > 0 ? `Rp ${low52W.toLocaleString("id-ID")}` : "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-mono text-accent-grey uppercase">Rata-rata 30D</div>
+                      <div className="font-mono font-bold mt-1">
+                        {avg30D > 0 ? `Rp ${avg30D.toLocaleString("id-ID")}` : "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-mono text-accent-grey uppercase">Volatilitas</div>
+                      <div className={`font-mono font-bold mt-1 ${
+                        volatilityText === "Tinggi" ? "text-accent-red" : volatilityText === "Sedang" ? "text-yellow-600" : "text-accent-green"
+                      }`}>
+                        {volatilityText}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {predictionData ? (
-              <div className={`p-6 border-2 border-border-color shadow-brutal flex items-start space-x-4 ${
-                predictionData.alertTrigger === 'CRITICAL' 
-                  ? 'bg-red-50 text-red-900 border-red-500' 
-                  : predictionData.alertTrigger === 'WARNING' 
-                  ? 'bg-yellow-50 text-yellow-900 border-yellow-500' 
-                  : 'bg-green-50 text-green-900 border-green-500'
-              }`}>
-                <div className={`p-3 text-white ${
+            {/* Right Column: Peringatan Harga */}
+            <div className="lg:col-span-1">
+              {predictionData ? (
+                <div className={`p-6 border-2 border-border-color shadow-brutal flex items-start space-x-4 h-full ${
                   predictionData.alertTrigger === 'CRITICAL' 
-                    ? 'bg-accent-red' 
+                    ? 'bg-red-50 text-red-900 border-red-500' 
                     : predictionData.alertTrigger === 'WARNING' 
-                    ? 'bg-yellow-600' 
-                    : 'bg-accent-green'
+                    ? 'bg-yellow-50 text-yellow-900 border-yellow-500' 
+                    : 'bg-green-50 text-green-900 border-green-500'
                 }`}>
-                  <AlertTriangle size={24} />
+                  <div className={`p-3 text-white ${
+                    predictionData.alertTrigger === 'CRITICAL' 
+                      ? 'bg-accent-red' 
+                      : predictionData.alertTrigger === 'WARNING' 
+                      ? 'bg-yellow-600' 
+                      : 'bg-accent-green'
+                  }`}>
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold uppercase tracking-tight">
+                      Peringatan Harga ({
+                        predictionData.alertTrigger === 'CRITICAL' 
+                          ? 'Kritis' 
+                          : predictionData.alertTrigger === 'WARNING' 
+                          ? 'Waspada' 
+                          : 'Aman'
+                      })
+                    </h4>
+                    <p className="text-sm mt-2 font-mono leading-relaxed">
+                      {predictionData.alertTrigger === 'CRITICAL' && (
+                        `⚠️ AWAS! Berdasarkan model ARIMA, harga ${name} diprediksi naik signifikan sebesar ${predictionData.priceChangePercent.toFixed(2)}% dalam 14 hari ke depan. Harap waspada terhadap potensi inflasi!`
+                      )}
+                      {predictionData.alertTrigger === 'WARNING' && (
+                        `⚠️ PERINGATAN: Harga ${name} diprediksi mengalami perubahan sebesar ${predictionData.priceChangePercent.toFixed(2)}% dalam 14 hari ke depan dengan tingkat volatilitas ${predictionData.volatility.toLowerCase()}.`
+                      )}
+                      {predictionData.alertTrigger === 'NONE' && (
+                        `✅ INFO TREN: Harga ${name} diprediksi stabil/kondusif dalam 14 hari ke depan dengan proyeksi perubahan sebesar ${predictionData.priceChangePercent.toFixed(2)}%.`
+                      )}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold uppercase tracking-tight">
-                    Peringatan Harga ({
-                      predictionData.alertTrigger === 'CRITICAL' 
-                        ? 'Kritis' 
-                        : predictionData.alertTrigger === 'WARNING' 
-                        ? 'Waspada' 
-                        : 'Aman'
-                    })
-                  </h4>
-                  <p className="text-sm mt-1">
-                    {predictionData.alertTrigger === 'CRITICAL' && (
-                      `⚠️ AWAS! Berdasarkan model ARIMA, harga ${name} diprediksi naik signifikan sebesar ${predictionData.priceChangePercent.toFixed(2)}% dalam 14 hari ke depan. Harap waspada terhadap potensi inflasi!`
-                    )}
-                    {predictionData.alertTrigger === 'WARNING' && (
-                      `⚠️ PERINGATAN: Harga ${name} diprediksi mengalami perubahan sebesar ${predictionData.priceChangePercent.toFixed(2)}% dalam 14 hari ke depan dengan tingkat volatilitas ${predictionData.volatility.toLowerCase()}.`
-                    )}
-                    {predictionData.alertTrigger === 'NONE' && (
-                      `✅ INFO TREN: Harga ${name} diprediksi stabil/kondusif dalam 14 hari ke depan dengan proyeksi perubahan sebesar ${predictionData.priceChangePercent.toFixed(2)}%.`
-                    )}
-                  </p>
+              ) : (
+                <div className="bg-white border-2 border-border-color p-6 shadow-brutal flex items-start space-x-4 h-full">
+                  <div className="bg-accent-red text-white p-3">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold uppercase tracking-tight">Peringatan Harga</h4>
+                    <p className="text-sm mt-1">Gagal memuat analisis tren harga terbaru dari model prediksi.</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white border-2 border-border-color p-6 shadow-brutal flex items-start space-x-4">
-                <div className="bg-accent-red text-white p-3">
-                  <AlertTriangle size={24} />
-                </div>
-                <div>
-                  <h4 className="font-bold uppercase tracking-tight">Peringatan Harga</h4>
-                  <p className="text-sm mt-1">Gagal memuat analisis tren harga terbaru dari model prediksi.</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: Chart & Analysis */}
-          <div className="lg:col-span-2 space-y-6">
-            <CandlestickChart data={chartData} />
-            
-            <PredictionSection commodityId={commodityId} name={name} pasar={pasar} />
+              )}
+            </div>
           </div>
           
         </div>
       </div>
-    </div>
-  </main>
+    </main>
   );
 }

@@ -29,6 +29,7 @@ interface PredictionMetrics {
 interface CombinedPredictionChartProps {
   commodityId: string;
   name: string;
+  pasar?: string;
   commoditiesList?: Array<{ id: string; name: string; unit?: string }>;
   onCommodityChange?: (id: string, name: string) => void;
 }
@@ -36,6 +37,7 @@ interface CombinedPredictionChartProps {
 export default function CombinedPredictionChart({
   commodityId,
   name,
+  pasar,
   commoditiesList,
   onCommodityChange,
 }: CombinedPredictionChartProps) {
@@ -63,11 +65,13 @@ export default function CombinedPredictionChart({
     setError(null);
     try {
       // 1. Fetch historical data
-      const histRes = await fetch(`${API_BASE}/commodities/${commodityId}`);
+      const histUrl = `${API_BASE}/commodities/${commodityId}${pasar ? `?pasar=${encodeURIComponent(pasar)}` : ''}`;
+      const histRes = await fetch(histUrl);
       const histJson = await histRes.json();
       
       // 2. Fetch prediction data
-      const predRes = await fetch(`${API_BASE}/commodities/${commodityId}/predict?days=${forecastDays}`);
+      const predUrl = `${API_BASE}/commodities/${commodityId}/predict?days=${forecastDays}${pasar ? `&pasar=${encodeURIComponent(pasar)}` : ''}`;
+      const predRes = await fetch(predUrl);
       const predJson = await predRes.json();
 
       if (histJson.success && histJson.data) {
@@ -87,7 +91,7 @@ export default function CombinedPredictionChart({
     } finally {
       setLoading(false);
     }
-  }, [commodityId, forecastDays]);
+  }, [commodityId, forecastDays, pasar]);
 
   useEffect(() => {
     fetchData();
