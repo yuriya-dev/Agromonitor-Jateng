@@ -468,6 +468,14 @@ function buildPrediction(rows: StorageRow[], days: number) {
     alertTrigger = 'WARNING';
   }
 
+  const fittedValues = series.map((value, index) => {
+    const predicted = slope * index + intercept;
+    return {
+      time: dates[index],
+      value: Math.max(0, Math.round(predicted))
+    };
+  });
+
   const commodityName = rows[0]?.komoditas ?? 'Komoditas';
 
   let dynamicNote = '';
@@ -485,6 +493,7 @@ function buildPrediction(rows: StorageRow[], days: number) {
       rmse: parseFloat(rmse.toFixed(2)),
     },
     forecast,
+    fittedValues,
     trendDirection,
     priceChangePercent: parseFloat(priceChangePercent.toFixed(2)),
     volatility,
@@ -547,6 +556,7 @@ export async function getPredictionBySlug(slug: string, days: number, region?: s
           modelUsed: result.data.modelUsed,
           metrics: result.data.metrics,
           forecast: result.data.forecast,
+          fittedValues: result.data.fittedValues,
           trendDirection: result.data.trendDirection,
           priceChangePercent: result.data.priceChangePercent,
           volatility: result.data.volatility,
@@ -576,6 +586,7 @@ export async function getPredictionBySlug(slug: string, days: number, region?: s
       confidenceLevel: `${conf_level}%`,
     },
     forecast: prediction.forecast,
+    fittedValues: prediction.fittedValues,
     trendDirection: prediction.trendDirection,
     priceChangePercent: prediction.priceChangePercent,
     volatility: prediction.volatility,

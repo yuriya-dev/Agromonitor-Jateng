@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createChart, ColorType, IChartApi, LineSeries } from "lightweight-charts";
-import { Info, Calendar, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { Info, Calendar, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api-config";
 
 interface HistoricalDataPoint {
@@ -48,6 +48,7 @@ export default function CombinedPredictionChart({
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [predictionData, setPredictionData] = useState<{
     forecast: PredictionDataPoint[];
+    fittedValues?: Array<{ time: string; value: number }>;
     metrics: PredictionMetrics;
     modelUsed: string;
     dynamicNote?: string;
@@ -57,7 +58,7 @@ export default function CombinedPredictionChart({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -80,17 +81,17 @@ export default function CombinedPredictionChart({
       } else {
         throw new Error("Gagal mengambil data prediksi ML");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || "Terjadi kesalahan saat memuat grafik.");
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan saat memuat grafik.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [commodityId, forecastDays]);
 
   useEffect(() => {
     fetchData();
-  }, [commodityId, forecastDays]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (!chartContainerRef.current || historicalData.length === 0 || !predictionData) return;
@@ -201,6 +202,25 @@ export default function CombinedPredictionChart({
       title: "Proyeksi Prediksi",
     });
     predSeries.setData(cleanForecast);
+
+    // 5. Seri Prediksi Historis (Fitted Values) - Abu-abu Putus-putus
+    const fittedSeries = chart.addSeries(LineSeries, {
+      color: "#9ca3af", // Gray
+      lineWidth: 2.5,
+      lineStyle: 2, // Dashed
+      title: "Prediksi Historis (Model Fit)",
+    });
+    let filteredFitted = predictionData.fittedValues || [];
+    if (historicalDays > 0 && filteredFitted.length > 0) {
+      const latestDateStr = historicalData[historicalData.length - 1].time;
+      const latestDate = new Date(latestDateStr);
+      const cutoffDate = new Date(latestDate);
+      cutoffDate.setDate(cutoffDate.getDate() - historicalDays);
+
+      filteredFitted = filteredFitted.filter((item: { time: string; value: number }) => new Date(item.time) >= cutoffDate);
+    }
+    const cleanFitted = processSeriesData(filteredFitted);
+    fittedSeries.setData(cleanFitted);
 
     chart.timeScale().fitContent();
 
@@ -374,6 +394,10 @@ export default function CombinedPredictionChart({
               <span>Harga Asli / Riil (Historis)</span>
             </div>
             <div className="flex items-center space-x-2">
+              <span className="w-4 h-0.5 bg-gray-400 inline-block border-b-2 border-dashed border-gray-400"></span>
+              <span>Prediksi Historis (Model Fit)</span>
+            </div>
+            <div className="flex items-center space-x-2">
               <span className="w-4 h-1 bg-black inline-block"></span>
               <span>Proyeksi Utama ARIMA</span>
             </div>
@@ -395,7 +419,7 @@ export default function CombinedPredictionChart({
           <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-sm font-mono text-gray-800 flex items-start shadow-sm">
             <Info size={20} className="mr-3 flex-shrink-0 mt-0.5 text-yellow-600" />
             <div>
-              <strong>Catatan Integrasi Grafik:</strong> Grafik di atas menyatukan deret data harga riil historis (garis biru) dengan proyeksi prediksi ARIMA (garis hitam) beserta pita koridor interval kepercayaan (garis merah & hijau). titik hari ini menghubungkan tren historis ke peramalan masa depan secara kontinu.
+              <strong>Catatan Integrasi Grafik:</strong> Grafik di atas menyatukan deret data harga riil historis (garis biru), prediksi model historis/fitted values (garis putus-abu), serta proyeksi prediksi ARIMA masa depan (garis hitam) lengkap dengan batas atas (garis merah) & bawah (garis hijau) interval kepercayaan. Rentang waktu disesuaikan secara otomatis sesuai dengan filter yang aktif.
             </div>
           </div>
         </>

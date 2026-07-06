@@ -203,6 +203,16 @@ def predict_commodity(
             rmse = 0.0
             mape = 0.0
 
+        # Construct fitted values (backcast prediction) list
+        fitted_list = []
+        for date_val, val in fitted_vals.items():
+            if not np.isnan(val):
+                date_str = date_val.strftime("%Y-%m-%d")
+                fitted_list.append({
+                    "time": date_str,
+                    "value": max(0, int(round(val)))
+                })
+
         # Perform forecasting
         forecast_result = fitted_model.get_forecast(steps=days)
         forecast_mean = forecast_result.predicted_mean
@@ -296,6 +306,7 @@ def predict_commodity(
                     "confidenceLevel": f"{conf_level}%"
                 },
                 "forecast": forecast_list,
+                "fittedValues": fitted_list,
                 "trendDirection": trend_direction,
                 "priceChangePercent": round(price_change_percent, 2),
                 "volatility": volatility,
