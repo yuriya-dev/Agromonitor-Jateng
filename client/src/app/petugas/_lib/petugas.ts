@@ -91,7 +91,7 @@ export const compressImageFile = (file: File) =>
   });
 
 export const loadSurveyHistory = async (petugasCode: string) => {
-  const response = await fetch(`${API_BASE}/admin/field-reports?search=${encodeURIComponent(petugasCode)}&limit=12`);
+  const response = await fetch(`${API_BASE}/admin/field-reports?petugasCode=${encodeURIComponent(petugasCode)}&limit=12`);
   const contentType = response.headers.get('content-type') || '';
   const responseText = await response.text();
 

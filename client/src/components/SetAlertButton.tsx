@@ -16,7 +16,6 @@ export default function SetAlertButton({ commodityName, currentPrice, commodityS
   const [isOpen, setIsOpen] = useState(false);
   const [targetPrice, setTargetPrice] = useState(currentPrice.toString());
   const [condition, setCondition] = useState("above");
-  const [channel, setChannel] = useState<"telegram" | "whatsapp">("whatsapp");
   const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -24,40 +23,29 @@ export default function SetAlertButton({ commodityName, currentPrice, commodityS
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (channel === "whatsapp") {
-      if (!user) {
-        toast.error("Gagal: Anda harus masuk (login) terlebih dahulu.");
-        return;
-      }
-      if (!user.whatsapp) {
-        toast.error("Gagal: Nomor WA belum diisi di profil.");
-        return;
-      }
+    if (!user) {
+      toast.error("Gagal: Anda harus masuk (login) terlebih dahulu.");
+      return;
+    }
+    if (!user.whatsapp) {
+      toast.error("Gagal: Nomor WA belum diisi di profil.");
+      return;
     }
 
     setIsLoading(true);
     
     try {
-      const endpoint = channel === "telegram"
-        ? `${API_BASE}/notifications/telegram`
-        : `${API_BASE}/notifications/whatsapp`;
+      const endpoint = `${API_BASE}/notifications/whatsapp`;
 
-      const payload = channel === "telegram"
-        ? {
-            commodityName,
-            condition,
-            targetPrice: Number(targetPrice),
-            currentPrice
-          }
-        : {
-            commodityName,
-            commoditySlug,
-            condition,
-            targetPrice: Number(targetPrice),
-            currentPrice,
-            whatsapp: user?.whatsapp,
-            userName: user?.name || "Pengguna"
-          };
+      const payload = {
+        commodityName,
+        commoditySlug,
+        condition,
+        targetPrice: Number(targetPrice),
+        currentPrice,
+        whatsapp: user?.whatsapp,
+        userName: user?.name || "Pengguna"
+      };
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -117,36 +105,15 @@ export default function SetAlertButton({ commodityName, currentPrice, commodityS
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div>
                 <label className="block text-xs font-mono font-bold uppercase mb-2">Saluran Notifikasi (Channel)</label>
-                <div className="grid grid-cols-2 gap-4 mb-2">
-                  <button
-                    type="button"
-                    onClick={() => setChannel("whatsapp")}
-                    className={`py-2 px-3 border-2 font-mono text-[10px] font-bold transition-all uppercase ${
-                      channel === "whatsapp" 
-                        ? "bg-foreground text-background border-foreground shadow-sm" 
-                        : "bg-white text-foreground border-border-color hover:border-foreground"
-                    }`}
-                  >
-                    WHATSAPP {user?.whatsapp ? `(${user.whatsapp.substring(0, 7)}...)` : ""}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setChannel("telegram")}
-                    className={`py-2 px-3 border-2 font-mono text-[10px] font-bold transition-all uppercase ${
-                      channel === "telegram" 
-                        ? "bg-foreground text-background border-foreground shadow-sm" 
-                        : "bg-white text-foreground border-border-color hover:border-foreground"
-                    }`}
-                  >
-                    TELEGRAM (Sistem)
-                  </button>
+                <div className="py-2 px-3 border-2 font-mono text-[10px] font-bold bg-foreground text-background border-foreground shadow-sm uppercase mb-2">
+                  WHATSAPP {user?.whatsapp ? `(${user.whatsapp.substring(0, 7)}...)` : ""}
                 </div>
-                {channel === "whatsapp" && !user && (
+                {!user && (
                   <p className="text-[10px] text-accent-red font-mono uppercase mt-1 leading-relaxed">
                     ⚠️ Silakan masuk (login) terlebih dahulu untuk menyetel peringatan WhatsApp.
                   </p>
                 )}
-                {channel === "whatsapp" && user && !user.whatsapp && (
+                {user && !user.whatsapp && (
                   <div className="text-[10px] text-accent-red font-mono uppercase mt-1 leading-relaxed">
                     ⚠️ Nomor WhatsApp belum diisi di profil Anda.{" "}
                     <a href="/profile" className="underline font-bold hover:text-black">
@@ -197,7 +164,7 @@ export default function SetAlertButton({ commodityName, currentPrice, commodityS
                 </button>
                 <button 
                   type="submit"
-                  disabled={isLoading || (channel === "whatsapp" && (!user || !user.whatsapp))}
+                  disabled={isLoading || !user || !user.whatsapp}
                   className="flex-1 py-3 bg-foreground text-background font-bold uppercase border-2 border-foreground hover:bg-opacity-80 transition-colors disabled:opacity-50"
                 >
                   {isLoading ? "Menyimpan..." : "Simpan Alert"}

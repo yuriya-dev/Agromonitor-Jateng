@@ -102,9 +102,19 @@ export const getFieldReports = async (req: Request, res: Response) => {
   try {
     const search = (req.query.search as string || '').trim();
     const status = (req.query.status as string || '').trim();
+    const petugasCode = (req.query.petugasCode as string || '').trim();
+    const petugasEmail = (req.query.petugasEmail as string || '').trim();
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
     const whereClause: any = {};
+
+    if (petugasCode) {
+      whereClause.petugasCode = petugasCode;
+    }
+
+    if (petugasEmail) {
+      whereClause.petugasEmail = petugasEmail;
+    }
 
     if (search) {
       whereClause.OR = [

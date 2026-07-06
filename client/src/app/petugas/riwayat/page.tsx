@@ -1,11 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, BadgeAlert, BadgeCheck, BadgeMinus, ChevronRight, History, LogOut, Menu, User2 } from 'lucide-react';
-import { loadSurveyHistory, petugasProfile, type SurveyHistoryItem } from '../_lib/petugas';
+import { loadSurveyHistory, type SurveyHistoryItem } from '../_lib/petugas';
+import { useAuth } from '@/context/AuthContext';
 
 export default function PetugasRiwayatPage() {
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const petugasCode = user?.email === 'petugas@agromonitor.local' ? 'PTG-194' : `PTG-${user?.id?.substring(0, 3).toUpperCase() || '194'}`;
+  const petugasName = user?.name || 'Slamet Riyadi';
+  const petugasEmail = user?.email || 'petugas@agromonitor.local';
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [surveyHistory, setSurveyHistory] = useState<SurveyHistoryItem[]>([]);
@@ -26,7 +35,7 @@ export default function PetugasRiwayatPage() {
     const run = async () => {
       setHistoryLoading(true);
       try {
-        const items = await loadSurveyHistory(petugasProfile.code);
+        const items = await loadSurveyHistory(petugasCode);
         setSurveyHistory(items);
       } catch {
         setSurveyHistory([]);
@@ -36,7 +45,7 @@ export default function PetugasRiwayatPage() {
     };
 
     run();
-  }, []);
+  }, [petugasCode]);
 
   const historyIcon = (status: SurveyHistoryItem['status']) => {
     if (status === 'APPROVED') return <BadgeCheck size={14} className="text-accent-green" />;
@@ -79,8 +88,8 @@ export default function PetugasRiwayatPage() {
                       <User2 size={18} />
                     </div>
                     <div>
-                      <div className="text-sm font-bold uppercase">{petugasProfile.name}</div>
-                      <div className="text-[10px] font-mono text-accent-grey uppercase">{petugasProfile.code}</div>
+                      <div className="text-sm font-bold uppercase">{petugasName}</div>
+                      <div className="text-[10px] font-mono text-accent-grey uppercase">{petugasCode}</div>
                     </div>
                   </div>
                 </div>
@@ -97,12 +106,15 @@ export default function PetugasRiwayatPage() {
                     </span>
                     <ChevronRight size={16} />
                   </Link>
-                  <Link href="/login" className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors">
+                  <button
+                    onClick={() => { logout(); router.push('/login'); }}
+                    className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors cursor-pointer"
+                  >
                     <span className="text-sm font-bold uppercase flex items-center gap-2">
                       <LogOut size={14} /> Keluar
                     </span>
                     <ChevronRight size={16} />
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}
@@ -117,8 +129,8 @@ export default function PetugasRiwayatPage() {
               </div>
               <div className="flex-1">
                 <div className="text-[10px] font-mono text-accent-grey uppercase">Riwayat Survei</div>
-                <h2 className="text-xl font-bold uppercase mt-1">{petugasProfile.name}</h2>
-                <p className="text-xs font-mono text-accent-grey mt-1">{petugasProfile.code} • {petugasProfile.email}</p>
+                <h2 className="text-xl font-bold uppercase mt-1">{petugasName}</h2>
+                <p className="text-xs font-mono text-accent-grey mt-1">{petugasCode} • {petugasEmail}</p>
               </div>
             </div>
           </section>

@@ -1,11 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, LogOut, Menu, Package, User2 } from 'lucide-react';
-import { petugasProfile } from '../_lib/petugas';
+import { useAuth } from '@/context/AuthContext';
 
 export default function PetugasProfilePage() {
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const petugasCode = user?.email === 'petugas@agromonitor.local' ? 'PTG-194' : `PTG-${user?.id?.substring(0, 3).toUpperCase() || '194'}`;
+  const petugasName = user?.name || 'Slamet Riyadi';
+  const petugasEmail = user?.email || 'petugas@agromonitor.local';
+
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,8 +56,8 @@ export default function PetugasProfilePage() {
                       <User2 size={18} />
                     </div>
                     <div>
-                      <div className="text-sm font-bold uppercase">{petugasProfile.name}</div>
-                      <div className="text-[10px] font-mono text-accent-grey uppercase">{petugasProfile.code}</div>
+                      <div className="text-sm font-bold uppercase">{petugasName}</div>
+                      <div className="text-[10px] font-mono text-accent-grey uppercase">{petugasCode}</div>
                     </div>
                   </div>
                 </div>
@@ -66,12 +74,15 @@ export default function PetugasProfilePage() {
                     </span>
                     <ChevronRight size={16} />
                   </Link>
-                  <Link href="/login" className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors">
+                  <button
+                    onClick={() => { logout(); router.push('/login'); }}
+                    className="w-full flex items-center justify-between px-3 py-3 border-2 border-transparent hover:border-border-color hover:bg-surface text-left transition-colors cursor-pointer"
+                  >
                     <span className="text-sm font-bold uppercase flex items-center gap-2">
                       <LogOut size={14} /> Keluar
                     </span>
                     <ChevronRight size={16} />
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}
@@ -86,9 +97,9 @@ export default function PetugasProfilePage() {
                 <User2 size={24} />
               </div>
               <div className="flex-1">
-                <div className="text-xl font-bold uppercase leading-tight">{petugasProfile.name}</div>
-                <div className="text-xs font-mono uppercase text-accent-grey mt-1">{petugasProfile.code}</div>
-                <div className="text-xs font-mono text-accent-grey mt-1 break-all">{petugasProfile.email}</div>
+                <div className="text-xl font-bold uppercase leading-tight">{petugasName}</div>
+                <div className="text-xs font-mono uppercase text-accent-grey mt-1">{petugasCode}</div>
+                <div className="text-xs font-mono text-accent-grey mt-1 break-all">{petugasEmail}</div>
               </div>
             </div>
           </section>
