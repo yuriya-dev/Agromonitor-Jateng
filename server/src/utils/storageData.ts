@@ -42,6 +42,22 @@ const CSV_FILES = fs.existsSync(STORAGE_DIR)
   ? fs.readdirSync(STORAGE_DIR).filter((fileName) => fileName.endsWith('.csv'))
   : [];
 const CONFIG_PATH = path.join(STORAGE_DIR, 'arima_config.json');
+const ALERT_CONFIG_PATH = path.join(STORAGE_DIR, 'alert_config.json');
+
+const readAlertConfig = () => {
+  const defaultAlertConfig = { criticalThreshold: 5.0, warningThreshold: 1.5 };
+  if (!fs.existsSync(ALERT_CONFIG_PATH)) return defaultAlertConfig;
+  try {
+    const data = JSON.parse(fs.readFileSync(ALERT_CONFIG_PATH, 'utf8'));
+    return {
+      criticalThreshold: typeof data.criticalThreshold === 'number' ? data.criticalThreshold : 5.0,
+      warningThreshold: typeof data.warningThreshold === 'number' ? data.warningThreshold : 1.5,
+    };
+  } catch (e) {
+    console.error('Error reading alert_config.json', e);
+    return defaultAlertConfig;
+  }
+};
 
 export function getStorageTotalDataPoints(): number {
   let count = 0;
@@ -355,6 +371,10 @@ function toCommodityHistory(slug: string, rows: StorageRow[]): CommodityHistory 
 }
 
 function buildPrediction(rows: StorageRow[], days: number) {
+  const alertConfig = readAlertConfig();
+  const criticalThreshold = alertConfig.criticalThreshold;
+  const warningThreshold = alertConfig.warningThreshold;
+
   const byDate = groupByDate(rows);
   const dates = [...byDate.keys()];
   const series = dates.map((date) => average((byDate.get(date) ?? []).map((row) => row.harga)));
@@ -442,9 +462,9 @@ function buildPrediction(rows: StorageRow[], days: number) {
   }
 
   let alertTrigger = 'NONE';
-  if (priceChangePercent >= 5.0) {
+  if (priceChangePercent >= criticalThreshold) {
     alertTrigger = 'CRITICAL';
-  } else if (priceChangePercent >= 1.5 || priceChangePercent <= -3.0 || volatility === 'TINGGI') {
+  } else if (priceChangePercent >= warningThreshold || priceChangePercent <= -3.0 || volatility === 'TINGGI') {
     alertTrigger = 'WARNING';
   }
 
@@ -507,10 +527,14 @@ export async function getPredictionBySlug(slug: string, days: number, region?: s
     return null;
   }
 
+  const alertConfig = readAlertConfig();
+  const criticalThreshold = alertConfig.criticalThreshold;
+  const warningThreshold = alertConfig.warningThreshold;
+
   // Coba memanggil Python ML-service di port 5002
   try {
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://127.0.0.1:5002';
-    const url = `${mlServiceUrl}/predict?slug=${normalizedSlug}&days=${days}${region ? `&region=${encodeURIComponent(region)}` : ''}`;
+    const url = `${mlServiceUrl}/predict?slug=${normalizedSlug}&days=${days}${region ? `&region=${encodeURIComponent(region)}` : ''}&critical_threshold=${criticalThreshold}&warning_threshold=${warningThreshold}`;
     const response = await fetch(url);
     if (response.ok) {
       const result = await response.json();

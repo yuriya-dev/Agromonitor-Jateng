@@ -12,6 +12,35 @@ import {
 const prisma = new PrismaClient();
 const STORAGE_DIR = path.resolve(__dirname, '../../../storage');
 const CONFIG_PATH = path.join(STORAGE_DIR, 'arima_config.json');
+const ALERT_CONFIG_PATH = path.join(STORAGE_DIR, 'alert_config.json');
+
+// Helper untuk membaca alert_config
+const readAlertConfig = () => {
+  const defaultAlertConfig = { criticalThreshold: 5.0, warningThreshold: 1.5 };
+  if (!fs.existsSync(ALERT_CONFIG_PATH)) return defaultAlertConfig;
+  try {
+    const data = JSON.parse(fs.readFileSync(ALERT_CONFIG_PATH, 'utf8'));
+    return {
+      criticalThreshold: typeof data.criticalThreshold === 'number' ? data.criticalThreshold : 5.0,
+      warningThreshold: typeof data.warningThreshold === 'number' ? data.warningThreshold : 1.5,
+    };
+  } catch (e) {
+    console.error('Error reading alert_config.json', e);
+    return defaultAlertConfig;
+  }
+};
+
+// Helper untuk menulis alert_config
+const writeAlertConfig = (config: any) => {
+  try {
+    if (!fs.existsSync(STORAGE_DIR)) {
+      fs.mkdirSync(STORAGE_DIR, { recursive: true });
+    }
+    fs.writeFileSync(ALERT_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error writing alert_config.json', e);
+  }
+};
 
 // Helper untuk membaca arima_config
 const readConfig = () => {
@@ -314,6 +343,45 @@ export const exportJson = async (req: Request, res: Response) => {
         ...d,
         tanggal: d.tanggal.toISOString().split('T')[0]
       }))
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// GET /api/analis/alert-config
+export const getAlertConfig = async (req: Request, res: Response) => {
+  try {
+    const config = readAlertConfig();
+    res.json({ success: true, data: config });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// POST /api/analis/alert-config
+export const saveAlertConfig = async (req: Request, res: Response) => {
+  try {
+    const { criticalThreshold, warningThreshold } = req.body;
+    
+    if (criticalThreshold === undefined || warningThreshold === undefined) {
+      return res.status(400).json({ success: false, message: 'criticalThreshold and warningThreshold are required' });
+    }
+
+    const config = {
+      criticalThreshold: Number(criticalThreshold),
+      warningThreshold: Number(warningThreshold),
+      updatedAt: new Date().toISOString()
+    };
+
+    writeAlertConfig(config);
+
+    res.json({
+      success: true,
+      message: 'Peringatan Harga Terintegrasi berhasil diperbarui',
+      data: config
     });
   } catch (error) {
     console.error(error);

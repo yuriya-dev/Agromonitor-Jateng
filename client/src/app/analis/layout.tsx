@@ -7,7 +7,8 @@ import {
   BarChart2, 
   Settings, 
   FileText,
-  TrendingUp
+  TrendingUp,
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -91,6 +92,18 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
           </Link>
 
           <Link 
+            href="/analis/peringatan" 
+            className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors ${
+              isActive("/analis/peringatan") 
+                ? "bg-surface border-r-4 border-accent-green text-foreground font-bold" 
+                : "hover:bg-surface text-accent-grey hover:text-foreground"
+            }`}
+          >
+            <Bell size={18} className="mr-3" />
+            Konfigurasi Peringatan
+          </Link>
+
+          <Link 
             href="/analis/laporan" 
             className={`flex items-center px-6 py-3 font-mono text-sm uppercase transition-colors border-t border-border-color mt-4 pt-4 ${
               isActive("/analis/laporan") 
@@ -123,6 +136,7 @@ export default function AnalisLayout({ children }: { children: React.ReactNode }
             {pathname === "/analis" && "Advanced Analytics & Prediction"}
             {pathname === "/analis/grafik" && "Grafik Prediksi & Harga Asli"}
             {pathname === "/analis/arima" && "Konfigurasi Model ARIMA"}
+            {pathname === "/analis/peringatan" && "Konfigurasi Peringatan Harga"}
             {pathname === "/analis/laporan" && "Ekspor Laporan Analitik"}
           </h2>
           <div className="flex items-center space-x-4">

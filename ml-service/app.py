@@ -68,6 +68,11 @@ def read_root():
         "available_csv_files": [os.path.basename(f) for f in files if not os.path.basename(f).startswith('.')]
     }
 
+# Global Cache variables
+CACHED_DF = None
+CACHED_MTIME = 0
+PREDICTION_CACHE = {}
+
 @app.get("/predict")
 def predict_commodity(
     slug: str = Query(..., description="Slug komoditas, misal: beras-medium"),
@@ -76,56 +81,56 @@ def predict_commodity(
     p: int = Query(None, description="Auto-Regressive parameter (p)"),
     d: int = Query(None, description="Integrated parameter (d)"),
     q: int = Query(None, description="Moving Average parameter (q)"),
-    confidence: int = Query(None, description="Confidence interval percentage")
+    confidence: int = Query(None, description="Confidence interval percentage"),
+    critical_threshold: float = Query(5.0, description="Critical warning threshold (default 5.0%)"),
+    warning_threshold: float = Query(1.5, description="Warning threshold (default 1.5%)")
 ):
-    try:
-        target_file = os.path.join(STORAGE_DIR, "data_harga_pangan.csv")
-        if os.path.exists(target_file):
-            csv_files = [target_file]
-        else:
-            csv_files = glob.glob(os.path.join(STORAGE_DIR, "*.csv"))
+    global CACHED_DF, CACHED_MTIME, PREDICTION_CACHE
 
+    target_file = os.path.join(STORAGE_DIR, "data_harga_pangan.csv")
+    if not os.path.exists(target_file):
+        # Fallback to check other csv if target_file is missing
+        csv_files = glob.glob(os.path.join(STORAGE_DIR, "*.csv"))
         if not csv_files:
-            raise HTTPException(status_code=500, detail="Tidak ada file data CSV ditemukan di folder storage.")
+            raise HTTPException(status_code=500, detail="Tidak ada file data CSV ditemukan.")
+        target_file = csv_files[0]
 
-        # Load all CSV files
-        df_list = []
-        for file in csv_files:
-            try:
-                temp_df = pd.read_csv(file)
-                # Map columns dynamically to support different schemas
-                rename_map = {
-                    'tanggal': 'tanggal_awal',
-                    'harga': 'harga_tanggal_awal',
-                    'kabupaten_kota': 'kabupaten_kota'
-                }
-                for col in temp_df.columns:
-                    col_lower = col.lower()
-                    if col_lower in rename_map:
-                        temp_df.rename(columns={col: rename_map[col_lower]}, inplace=True)
-                df_list.append(temp_df)
-            except Exception as e:
-                print(f"Gagal membaca file {file}: {e}")
+    mtime = os.path.getmtime(target_file)
 
-        if not df_list:
-            raise HTTPException(status_code=500, detail="Gagal membaca data dari file CSV.")
+    if mtime != CACHED_MTIME:
+        print(f"[ML-Service] Data CSV berubah (mtime: {mtime} vs {CACHED_MTIME}). Mengosongkan cache.")
+        CACHED_DF = None
+        CACHED_MTIME = mtime
+        PREDICTION_CACHE = {}
 
-        raw_df = pd.concat(df_list, ignore_index=True)
+    # Check prediction cache
+    cache_key = f"{slug}||{days}||{region}||{p}||{d}||{q}||{confidence}||{critical_threshold}||{warning_threshold}"
+    if cache_key in PREDICTION_CACHE:
+        return PREDICTION_CACHE[cache_key]
 
-        # Parse date dynamically
-        def parse_date(val):
-            try:
-                if '-' in str(val):
-                    return pd.to_datetime(val, format='%Y-%m-%d')
-                else:
-                    return pd.to_datetime(val, format='%d/%m/%Y')
-            except:
-                return pd.to_datetime(val, errors='coerce')
+    try:
+        if CACHED_DF is None:
+            print(f"[ML-Service] Cache miss untuk dataframe. Membaca CSV: {target_file}")
+            raw_df = pd.read_csv(target_file)
+            
+            # Map columns dynamically to support different schemas
+            rename_map = {
+                'tanggal': 'tanggal_awal',
+                'harga': 'harga_tanggal_awal',
+                'kabupaten_kota': 'kabupaten_kota'
+            }
+            for col in raw_df.columns:
+                col_lower = col.lower()
+                if col_lower in rename_map:
+                    raw_df.rename(columns={col: rename_map[col_lower]}, inplace=True)
+                    
+            # Parse date dynamically (vectorized, super fast!)
+            raw_df['tanggal_awal'] = pd.to_datetime(raw_df['tanggal_awal'], errors='coerce')
+            raw_df['slug'] = raw_df['komoditas'].apply(slugify)
+            CACHED_DF = raw_df
+        else:
+            raw_df = CACHED_DF
 
-        raw_df['tanggal_awal'] = raw_df['tanggal_awal'].apply(parse_date)
-
-        # Filter by slug matching the commodity name
-        raw_df['slug'] = raw_df['komoditas'].apply(slugify)
         df_commodity = raw_df[raw_df['slug'] == slug].copy()
 
         if df_commodity.empty:
@@ -223,8 +228,7 @@ def predict_commodity(
         # Hitung metrik dinamis untuk Peringatan Harga & Catatan Prediksi
         last_historical_price = float(df_daily['Price'].iloc[-1])
         final_forecasted_price = float(forecast_mean.iloc[-1])
-        price_change = final_forecasted_price - last_historical_price
-        price_change_percent = float((price_change / last_historical_price) * 100) if last_historical_price > 0 else 0.0
+        price_change_percent = ((final_forecasted_price - last_historical_price) / last_historical_price) * 100
 
         # Tentukan trend_direction
         if price_change_percent > 1.5:
@@ -249,9 +253,9 @@ def predict_commodity(
             volatility = "RENDAH"
 
         # Peringatan harga (alert_trigger)
-        if price_change_percent >= 5.0:
+        if price_change_percent >= critical_threshold:
             alert_trigger = "CRITICAL"
-        elif price_change_percent >= 1.5 or price_change_percent <= -3.0 or volatility == "TINGGI":
+        elif price_change_percent >= warning_threshold or price_change_percent <= -3.0 or volatility == "TINGGI":
             alert_trigger = "WARNING"
         else:
             alert_trigger = "NONE"
@@ -279,7 +283,7 @@ def predict_commodity(
                 f"dengan interval kepercayaan {conf_level}%, menunjukkan kondisi pasar yang kondusif."
             )
 
-        return {
+        result = {
             "success": True,
             "data": {
                 "commodityId": slug,
@@ -299,6 +303,9 @@ def predict_commodity(
                 "dynamicNote": dynamic_note
             }
         }
+        
+        PREDICTION_CACHE[cache_key] = result
+        return result
 
     except HTTPException as he:
         raise he
